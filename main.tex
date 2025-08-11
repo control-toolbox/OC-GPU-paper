@@ -182,7 +182,7 @@ These are compiled with \texttt{ExaModels.jl}~\cite{shin2024accelerating} into G
 
 Problems are solved on NVIDIA GPUs using the interior-point solver \texttt{MadNLP.jl}~\cite{shin2021graph} and the sparse linear solver \texttt{CUDSS.jl}~\cite{Montoison_CUDSS_jl_Julia_interface}, enabling end-to-end acceleration from modeling to solving.
 
-We demonstrate the performance of this approach on benchmark problems solved on GPUs such as the NVIDIA GH200.
+We demonstrate the performance of this approach on benchmark problems solved on GPUs such as the NVIDIA H100 and GH200.
 
 %\textcolor{red}{We also examine generalizations to hybrid systems characterized by discrete-continuous interactions, Pontryagin-based shooting transcriptions, and infinite-horizon or functional programs modeled with \texttt{InfiniteOpt.jl}~\cite{pulsipher2022unifying}. $\rightarrow$ J-B}
 
@@ -215,7 +215,7 @@ We demonstrate the performance of this approach on benchmark problems solved on 
 Optimal control problems (OCPs) aim to find control inputs for dynamical systems modeled by ODEs that optimize a given performance criterion.
 Direct transcription methods discretize these infinite-dimensional problems into large-scale nonlinear programs (NLPs).
 These NLPs exhibit a sparse structure arising from time discretization: each node introduces state and control variables linked by nonlinear equality constraints enforcing the system dynamics.
-Second-order methods, such as interior-point solvers, exploit this structure for efficient problem solution.
+Second-order methods, such as interior-point solvers, exploit this structure. % for efficient problem solution.
 
 Most existing optimal control toolchains target CPU execution.
 For example, CasADi~\cite{Andersson2019} constructs symbolic expressions evaluated just-in-time or exported as C code, typically solved by CPU solvers like IPOPT~\cite{wachter2006implementation} or KNITRO~\cite{byrd2006k}, which rely on CPU linear solvers such as PARDISO~\cite{schenk2004solving}, MUMPS~\cite{amestoy2000mumps}, or HSL~\cite{fowkes2024libhsl}.
@@ -244,13 +244,14 @@ $$ g(x(0), x(t_f)) + \int_0^{t_f} f^0(x(t), u(t))\,\mathrm{d}t \to \min $$
 can be approximated by
 $$ g(X_0, X_N) + \sum_{i=0}^{N-1} h_i f^0(X_i, U_i). $$
 Discretising boundary or path constraints such as
-$$ b(x(0),x(t_f)) \leq 0,\quad c(x(t), u(t)) \leq 0 $$
+$$ b\big(x(0),x(t_f)\big) \leq 0,\quad c\big(x(t), u(t)\big) \leq 0 $$
 is obviously done according to
 $$ b(X_0, X_N) \leq 0, \quad c(X_i, U_i) \leq 0,\quad i = 0, \dots, N-1. $$
 The resulting NLP in the vector $(X_0,\dots,X_N,U_0,\dots,U_{N-1})$
 so involves only a few functions (\emph{kernels}), namely $f, f^0$, $g$, $b$ and $c$, that need to be evaluated on many state or control points, $X_i$, $U_i$.
 This massive SIMD parallelism allows for a very efficient GPU solving. GPU acceleration thus facilitates real-time and large-scale optimal control computations critical to robotics and autonomous systems as in \cite{pacaud2024gpu}.
-Note that it is also important to exploit the inherent sparsity of the Jacobian of the NLP constraints, see \emph{e.g.} \cite{alexis-xxxx}.
+% Note that it is also important to exploit the inherent sparsity of the Jacobian of the NLP constraints, see \emph{e.g.} \cite{alexis-xxxx}.
+% J-B what do you have in mind with the previous sentence?
 
 %Methods such as multiple shooting or collocation evaluate system dynamics and their derivatives independently across time segments.
 %This parallelism, combined with the sparse and structured pattern of derivative blocks, creates a SIMD-like computational workload ideally suited for GPUs.
@@ -291,7 +292,8 @@ The package \texttt{CUDA.jl}~\cite{besard2018juliagpu,besard2019prototyping} pro
 
 For vendor-agnostic and portable GPU development, \texttt{KernelAbstractions.jl}~\cite{Churavy_KernelAbstractions_jl} allows writing GPU kernels in Julia that can target multiple backends such as CUDA (NVIDIA), ROCm (AMD), oneAPI (Intel), and Metal (Apple).
 
-This ecosystem leverages the LLVM compiler infrastructure and vendor APIs to generate efficient GPU code without requiring users to write native CUDA code.
+This ecosystem leverages the LLVM compiler infrastructure and vendor APIs to generate efficient native GPU code directly from pure high-level Julia code.
+It allows users to exploit GPUs without requiring any knowledge of GPU programming.
 For instance, \texttt{ExaModels.jl} builds on \texttt{KernelAbstractions.jl} to automatically generate specialized GPU kernels for parallel evaluation of ODE residuals, Jacobians, and Hessians needed in optimal control problems.
 
 We build on this ecosystem to create a complete GPU-accelerated toolchain spanning modeling, differentiation, and solving.
