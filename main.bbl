@@ -1,0 +1,112 @@
+\begin{thebibliography}{10}
+
+\bibitem{amestoy2000mumps}
+{\sc P.~R. Amestoy, I.~S. Duff, J.-Y. L’Excellent, and J.~Koster}, {\em
+  Mumps: a general purpose distributed memory sparse solver}, in International
+  Workshop on Applied Parallel Computing, Springer, 2000, pp.~121--130.
+
+\bibitem{Andersson2019}
+{\sc J.~A.~E. Andersson, J.~Gillis, G.~Horn, J.~B. Rawlings, and M.~Diehl},
+  {\em {CasADi} -- {A} software framework for nonlinear optimization and
+  optimal control}, Mathematical Programming Computation, 11 (2019), pp.~1--36,
+  \url{https://doi.org/10.1007/s12532-018-0139-4}.
+
+\bibitem{besard2019prototyping}
+{\sc T.~Besard, V.~Churavy, A.~Edelman, and B.~De~Sutter}, {\em Rapid software
+  prototyping for heterogeneous and distributed platforms}, Advances in
+  Engineering Software, 132 (2019), pp.~29--46.
+
+\bibitem{besard2018juliagpu}
+{\sc T.~Besard, C.~Foket, and B.~De~Sutter}, {\em Effective extensible
+  programming: Unleashing {Julia} on {GPUs}}, IEEE Transactions on Parallel and
+  Distributed Systems,  (2018),
+  \url{https://doi.org/10.1109/TPDS.2018.2872064},
+  \url{https://arxiv.org/abs/1712.03112}.
+
+\bibitem{bezanson2017julia}
+{\sc J.~Bezanson, A.~Edelman, S.~Karpinski, and V.~B. Shah}, {\em Julia: A
+  fresh approach to numerical computing}, SIAM review, 59 (2017), pp.~65--98.
+
+\bibitem{bondarenko2000cops}
+{\sc A.~S. Bondarenko, D.~M. Bortz, and J.~Mor{\'e}}, {\em Cops: Large-scale
+  nonlinearly constrained optimization problems}, tech. report, Argonne
+  National Lab., IL (US), 2000.
+
+\bibitem{byrd2006k}
+{\sc R.~H. Byrd, J.~Nocedal, and R.~A. Waltz}, {\em K nitro: An integrated
+  package for nonlinear optimization}, Large-scale nonlinear optimization,
+  (2006), pp.~35--59.
+
+\bibitem{Caillau_OptimalControl_jl_a_Julia}
+{\sc J.-B. Caillau, O.~Cots, J.~Gergaud, P.~Martinon, and S.~Sed}, {\em
+  {OptimalControl.jl: a Julia package to model and solve optimal control
+  problems with ODE's}}, \url{https://doi.org/10.5281/zenodo.13336563},
+  \url{https://control-toolbox.org/OptimalControl.jl}.
+
+\bibitem{Churavy_KernelAbstractions_jl}
+{\sc V.~Churavy}, {\em {KernelAbstractions.jl}},
+  \url{https://github.com/JuliaGPU/KernelAbstractions.jl}.
+
+\bibitem{dunning2017jump}
+{\sc I.~Dunning, J.~Huchette, and M.~Lubin}, {\em Jump: A modeling language for
+  mathematical optimization}, SIAM review, 59 (2017), pp.~295--320.
+
+\bibitem{OCS2}
+{\sc F.~Farshidian et~al.}, {\em {OCS2}: An open source library for optimal
+  control of switched systems}.
+\newblock [Online]. Available: \url{https://github.com/leggedrobotics/ocs2}.
+
+\bibitem{fowkes2024libhsl}
+{\sc J.~Fowkes, A.~Lister, A.~Montoison, and D.~Orban}, {\em Libhsl: the
+  ultimate collection for large-scale scien-tific computation}, Les Cahiers du
+  GERAD ISSN, 711 (2024), p.~2440.
+
+\bibitem{houska2011acado}
+{\sc B.~Houska, H.~J. Ferreau, and M.~Diehl}, {\em Acado toolkit—an
+  open-source framework for automatic control and dynamic optimization},
+  Optimal control applications and methods, 32 (2011), pp.~298--312.
+
+\bibitem{mastalli2020crocoddyl}
+{\sc C.~Mastalli, R.~Budhiraja, W.~Merkt, G.~Saurel, B.~Hammoud, M.~Naveau,
+  J.~Carpentier, L.~Righetti, S.~Vijayakumar, and N.~Mansard}, {\em Crocoddyl:
+  An efficient and versatile framework for multi-contact optimal control}, in
+  2020 IEEE International Conference on Robotics and Automation (ICRA), IEEE,
+  2020, pp.~2536--2542.
+
+\bibitem{Montoison_CUDSS_jl_Julia_interface}
+{\sc A.~Montoison}, {\em {CUDSS.jl: Julia interface for NVIDIA cuDSS}},
+  \url{https://github.com/exanauts/CUDSS.jl}.
+
+\bibitem{pacaud2024gpu}
+{\sc F.~Pacaud and S.~Shin}, {\em Gpu-accelerated nonlinear model predictive
+  control with examodels and madnlp}, arXiv e-prints,  (2024), pp.~arXiv--2403.
+
+\bibitem{pulsipher2022unifying}
+{\sc J.~L. Pulsipher, W.~Zhang, T.~J. Hongisto, and V.~M. Zavala}, {\em A
+  unifying modeling abstraction for infinite-dimensional optimization},
+  Computers and Chemical Engineering, 156 (2022),
+  \url{https://doi.org/https://doi.org/10.1016/j.compchemeng.2021.107567},
+  \url{https://www.sciencedirect.com/science/article/pii/S0098135421003458}.
+
+\bibitem{schenk2004solving}
+{\sc O.~Schenk and K.~G{\"a}rtner}, {\em Solving unsymmetric sparse systems of
+  linear equations with pardiso}, Future Generation Computer Systems, 20
+  (2004), pp.~475--487.
+
+\bibitem{shin2024accelerating}
+{\sc S.~Shin, M.~Anitescu, and F.~Pacaud}, {\em Accelerating optimal power flow
+  with {GPU}s: {SIMD} abstraction of nonlinear programs and condensed-space
+  interior-point methods}, Electric Power Systems Research, 236 (2024),
+  p.~110651.
+
+\bibitem{shin2021graph}
+{\sc S.~Shin, C.~Coffrin, K.~Sundar, and V.~M. Zavala}, {\em Graph-based
+  modeling and decomposition of energy infrastructures}, IFAC-PapersOnLine, 54
+  (2021), pp.~693--698.
+
+\bibitem{wachter2006implementation}
+{\sc A.~W{\"a}chter and L.~T. Biegler}, {\em On the implementation of an
+  interior-point filter line-search algorithm for large-scale nonlinear
+  programming}, Mathematical programming, 106 (2006), pp.~25--57.
+
+\end{thebibliography}
