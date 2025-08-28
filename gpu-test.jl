@@ -7,8 +7,10 @@ using CUDA
 using BenchmarkTools
 using Interpolations
 import Logging
+using Plots
 
 Logging.disable_logging(Logging.Warn) # disable warnings
+versioninfo() # CUDA
 
 # Goddard (bang-singular-boundary-bang structure)
 
@@ -91,6 +93,7 @@ function quadrotor()
 
 end
     
+ 
 # Solving
 
 tol = 1e-7
@@ -99,7 +102,7 @@ print_level = MadNLP.WARN
 
 for (name, o) ∈ [("goddard", goddard()), ("quadrotor", quadrotor())]
 printstyled("\nProblem: $name\n"; bold=true)
-for N ∈ (100, 200, 500, 750, 1000, 2000, 5000, 7500, 10000, 20000, 50000, 75000, 100000)
+for N ∈ (100, 200, 500, 750, 1_000, 2_000, 5_000, 7_500, 10_000, 20_000, 50_000, 75_000, 100_000)
 
     m_cpu = model(direct_transcription(o, :exa; grid_size=N))
     m_gpu = model(direct_transcription(o, :exa; grid_size=N, exa_backend=CUDABackend()))
@@ -120,3 +123,41 @@ for N ∈ (100, 200, 500, 750, 1000, 2000, 5000, 7500, 10000, 20000, 50000, 7500
     end
 
 end; end
+
+# Plotting
+
+function my_plot(a)
+
+    p = plot(a[1, :], [a[2, :] a[3, :]],
+         marker = [:circle :square],
+         markersize = [4 6],
+         linewidth = 2,
+         labels = ["CPU" "GPU"],
+         xscale=:log10,
+         yscale=:log10,
+         xlabel="N",
+         ylabel="time (s)")
+
+    display(p)
+    return p
+
+end
+
+# Goddard A100
+
+raw =
+[ 100 14.6e-3 0.158 
+  200 29.3e-3 0.174
+  500 71.6e-3 0.186
+  750 102e-3 0.202
+ 1_000 134e-3 0.211
+ 2_000 286e-3 0.254
+ 5_000 861e-3 0.489 
+ 7_500 1.27 0.762
+ 10_000 1.72 0.988
+ 20_000 3.59 1.54
+ 50_000 10.1 4.33
+ 75_000 15.9 6.59
+ 100_000 21.5 8.75 ]'
+
+my_plot(raw)
