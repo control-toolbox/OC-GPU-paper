@@ -53,16 +53,17 @@ end
 
 function quadrotor()
 
-    T = 60
+    T = 1
     g = 9.8
     r = 0.1
-    o = @def begin
 
+    o = @def begin
+        
         t ∈ [0, T], time
-        x ∈ R^10, state
+        x ∈ R⁹, state
         u ∈ R⁴, control
     
-        x(0) == zeros(10)
+        x(0) == zeros(9)
     
         ∂(x₁)(t) == x₂(t)
         ∂(x₂)(t) == u₁(t) * cos(x₇(t)) * sin(x₈(t)) * cos(x₉(t)) + u₁(t) * sin(x₇(t)) * sin(x₉(t))
@@ -81,9 +82,8 @@ function quadrotor()
         dt5 = 2t / T
         df5 = 2
     
-        ∂(x[10])(t) == (x₁(t) - dt1)^2 + (x₃(t) - dt3)^2 + (x₅(t) - dt5)^2 + x₇(t)^2 + x₈(t)^2 + x₉(t)^2 +
-                       r * ( u₁(t)^2 + u₂(t)^2 + u₃(t)^2 + u₄(t)^2 )
-        0.5( (x₁(T) - df1)^2 + (x₃(T) - df3)^2 + (x₅(T) - df5)^2 + x₇(T)^2 + x₈(T)^2 + x₉(T)^2 )+ 0.5x[10](T) → min
+        0.5∫( (x₁(t) - dt1)^2 + (x₃(t) - dt3)^2 + (x₅(t) - dt5)^2 + x₇(t)^2 + x₈(t)^2 + x₉(t)^2 +
+           r * (u₁(t)^2 + u₂(t)^2 + u₃(t)^2 + u₄(t)^2) ) → min
     
     end
 
@@ -93,16 +93,17 @@ end
     
 # Solving
 
-o = goddard()
 tol = 1e-7
 print_level = MadNLP.WARN
 #print_level = MadNLP.INFO
 
-for N ∈ (100, ) # 200, 500, 750, 1000, 2000, 5000, 7500, 10000, 20000, 50000, 75000, 100000)
+for (name, o) ∈ [("goddard", goddard()), ("quadrotor", quadrotor())]
+printstyled("\nProblem: $name\n"; bold=true)
+for N ∈ (100, 200, 500, 750, 1000, 2000, 5000, 7500, 10000, 20000, 50000, 75000, 100000)
 
     m_cpu = model(direct_transcription(o, :exa; grid_size=N))
     m_gpu = model(direct_transcription(o, :exa; grid_size=N, exa_backend=CUDABackend()))
-    printstyled("\nsolver = MadNLP", ", N = ", N, "\n"; bold = true)
+    printstyled("\nsolver = MadNLP", ", N = ", N, "\n"; bold=true)
     print("CPU:")
     try sol = @btime madnlp($m_cpu; print_level=$print_level, tol=$tol, linear_solver=MumpsSolver)
         println("      converged: ", sol.status == MadNLP.Status(1), ", iter: ", sol.iter)
@@ -118,4 +119,4 @@ for N ∈ (100, ) # 200, 500, 750, 1000, 2000, 5000, 7500, 10000, 20000, 50000, 
         println("\n      error: ", ex)
     end
 
-end
+end; end
