@@ -1,6 +1,6 @@
 % todo: page limit (= 10); deadline 2/9/2025
+% unicode characters in \begin{minted}{julia} ...
 % https://www.siam.org/conferences-events/siam-conferences/pp26/submissions/ 
-% jb: sections 3, 5, 6, alexis does the rest
 %%%%%%%%%%%%%%%%%%%%%%%%%%  example_doublecolumn.tex  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 % This is example_twocolumn.tex, an example file for use with the SIAM LaTeX2E
@@ -61,12 +61,13 @@
 \usetikzlibrary{external}
 \usetikzlibrary{math}
 \usetikzlibrary{positioning}
-
+\usepackage[utf8]{inputenc}
 \usepackage[T1]{fontenc}
 \usepackage{amsfonts}
 \usepackage{graphicx}
 \usepackage{epstopdf}
 \usepackage{enumitem}
+\usepackage{minted}
 \usepackage{algorithmic}
 \ifpdf
   \DeclareGraphicsExtensions{.eps,.pdf,.png,.jpg}
@@ -187,7 +188,7 @@ These are compiled with \texttt{ExaModels.jl}~\cite{shin2024accelerating} into G
 
 Problems are solved on NVIDIA GPUs using the interior-point solver \texttt{MadNLP.jl}~\cite{shin2021graph} and the sparse linear solver \texttt{CUDSS.jl}~\cite{Montoison_CUDSS_jl_Julia_interface}, enabling end-to-end acceleration from modeling to solving.
 
-We demonstrate the performance of this approach on benchmark problems solved on NVIDIA H100 GPU.
+We demonstrate the performance of this approach on benchmark problems solved on NVIDIA A100 and H100 GPU.
 
 %\textcolor{red}{We also examine generalizations to hybrid systems characterized by discrete-continuous interactions, Pontryagin-based shooting transcriptions, and infinite-horizon or functional programs modeled with \texttt{InfiniteOpt.jl}~\cite{pulsipher2022unifying}. $\rightarrow$ J-B}
 
@@ -237,8 +238,7 @@ While some libraries provide GPU-accelerated components, none deliver a fully in
 
 Our work fills this gap with a GPU-first toolchain that unifies modeling, differentiation, and solver execution, addressing the computational challenges of efficient modeling, automatic differentiation, and sparse NLP solving at large scale.
 
-\section{Accelerated direct optimal control with GPU}
-
+\section{SIMD parallelism in direct optimal control}
 When discretized by \emph{direct transcription}, optimal control problems (OCPs) possess an inherent structure that naturally supports SIMD parallelism. 
 Consider indeed an optimal control with state $x(t) \in \mathbf{R}^n$, and control $u(t) \in \mathbf{R}^m$. Assume that the dynamics is modeled by the ODE
 $$ \dot{x}(t) = f(x(t), u(t)), $$
@@ -290,8 +290,8 @@ This massive SIMD parallelism allows for a very efficient GPU solving. GPU accel
 
 % \end{tikzpicture}
 
-\section{GPU programming in Julia}
-
+%\section{GPU programming in Julia}
+\section{A Julia-based GPU optimization stack}
 Julia offers a powerful and flexible environment for GPU programming, providing multiple levels of abstraction to suit different use cases.
 The package \texttt{CUDA.jl}~\cite{besard2018juliagpu,besard2019prototyping} provides direct access to NVIDIA GPUs, supporting easy array-based programming as well as explicit CUDA kernel writing and launching.
 
@@ -302,10 +302,7 @@ It allows users to exploit GPUs without requiring any knowledge of GPU programmi
 For instance, \texttt{ExaModels.jl} builds on \texttt{KernelAbstractions.jl} to automatically generate specialized GPU kernels for parallel evaluation of ODE residuals, Jacobians, and Hessians needed in optimal control problems.
 
 We build on this ecosystem to create a complete GPU-accelerated toolchain spanning modeling, differentiation, and solving.
-
-\section{A Julia-based GPU optimization stack}
-
-Building on this GPU programming foundation, we developed a fully Julia-native workflow for modeling and solving ODE-constrained optimal control problems (OCPs) with GPU acceleration.
+This results into a fully Julia-native workflow for modeling and solving ODE-constrained optimal control problems on GPU.
 
 Key components of our stack include:
 
@@ -320,22 +317,83 @@ Key components of our stack include:
 Together, these components form a high-level, performant stack that compiles intuitive Julia OCP models into efficient GPU code, achieving substantial speedups while maintaining usability.
 
 Our approach offers several advantages:
-
 \begin{itemize}
     \item \textbf{Abstraction}: intuitive problem definition via Julia DSLs without requiring manual GPU programming.
     \item \textbf{Performance}: JIT compilation, SIMD parallelism, and GPU-accelerated sparse linear algebra deliver significant runtime improvements.
     \item \textbf{Portability}: while symbolic modeling and kernel generation are backend-agnostic, the current bottleneck lies in sparse linear solvers which remain CUDA-specific; however, the framework is designed to adapt as compatible components become available.
 \end{itemize}
 
+\section{From optimal control models to SIMD abstraction}
+
+\begin{minted}{julia}
+ocp = @def begin
+    t ∈ [0, 1], time
+    x ∈ R², state
+    u ∈ R, control
+    x(0) == [-1, 0]
+    x(1) == [0, 0]
+    ∂(x₁)(t) == x₂(t)
+    ∂(x₂)(t) == u(t)
+    ∫( 0.5u(t)^2 ) → min
+end
+\end{minted}
+
+{\small
+\begin{minted}{julia}
+function (; scheme = :trapeze, grid_size = 250, backend = nothing, init = (0.1, 0.1, 0.1), base_type = Float64)
+\end{minted}
+}
+
+{\small
+\begin{minted}{julia}
+x = begin
+    local ex
+    try
+        variable(var"p_ocp##266", 2, 0:grid_size; lvar = [var"l_x##271"[var"i##275"] for (var"i##275", var"j##276") = Base.product(1:2, 0:grid_size)], uvar = [var"u_x##272"[var"i##275"] for (var"i##275", var"j##276") = Base.product(1:2, 0:grid_size)], start = init[2])
+    catch ex
+        println("Line ", 2, ": ", "(x ∈ R ^ 2, state)")
+        throw(ex)
+    end
+end
+\end{minted}
+}
+
+{\small
+\begin{minted}{julia}
+length([-1, 0]) == length([-1, 0]) == length(1:2) || throw("wrong bound dimension")
+constraint(var"p_ocp##266", (x[var"i##283", 0] for var"i##283" = 1:2); lcon = [-1, 0], ucon = [-1, 0])
+# println("Line ", 4, ": ", "x(0) == [-1, 0]")
+\end{minted}
+}
+
+{\small
+\begin{minted}{julia} 
+constraint(var"p_ocp##266j", ((x[1, var"j##291" + 1] - x[1, var"j##291"]) - (var"dt##268" * (x[2, var"j##291"] + x[2, var"j##291" + 1])) / 2 for var"j##291" = 0:grid_size - 1))
+constraint(var"p_ocp##266", ((x[1, var"j##291" + 1] - x[1, var"j##291"]) - var"dt##268" * x[2, var"j##291"] for var"j##291" = 0:grid_size - 1))
+constraint(var"p_ocp##266", ((x[1, var"j##291" + 1] - x[1, var"j##291"]) - var"dt##268" * x[2, var"j##291" + 1] for var"j##291" = 0:grid_size - 1))
+# println("Line ", 6, ": ", "(derivative(x₁))(t) == x₂(t)")
+\end{minted}
+}
+
+{\small
+\begin{minted}{julia}
+objective(var"p_ocp##266", ((1 * var"dt##268" * (0.5 * var"u##277"[1, var"j##299"] ^ 2)) / 2 for var"j##299" = (0, grid_size)))
+objective(var"p_ocp##266", (1 * var"dt##268" * (0.5 * var"u##277"[1, var"j##299"] ^ 2) for var"j##299" = 1:grid_size - 1))
+# println("Line ", 8, ": ", "integral(0.5 * u(t) ^ 2) → min")
+\end{minted}
+}
+           
 \section{Benchmark problems}
-
-We evaluate our GPU-accelerated stack on a range of classical optimal control problems, including:
-
+We evaluate our GPU-accelerated stack on two optimal control problems:
 \begin{itemize}
-    \item The Goddard rocket problem, a classic single-phase trajectory with nonlinear dynamics;
-    \item A quadrotor time-optimal control problem;
-    \item The three-link swimmer.
+    \item the Goddard rocket problem,
+    \item a quadrotor control problem.
 \end{itemize}
+Already discretized versions of these problems (using, \emph{e.g.}, Euler or trapezoidal schemes) can be found in standard collections of optimization problems such as COPS \cite{xxxx} (see also the Julia port of this collection in \texttt{COPSBenchmark.jl} \cite{xxxx}). Their infinite dimensional (non discretized) counterpart is also available in the more recent open collection of control problems \texttt{OptimalControlProblems.jl} \cite{xxxx}.
+
+%https://github.com/MadNLP/COPSBenchmark.jl
+
+% debug: a word on the number of iterations, on the problems (state dim, sing arcs etc. for goddard...), scheme used...
 
 These problems are sourced from the COPS benchmark suite~\cite{bondarenko2000cops} and available through the Julia packages \texttt{COPSBenchmarks.jl} and \texttt{CTBenchmarks.jl}.
 
@@ -343,18 +401,40 @@ We compare GPU and CPU performance,
 % including against CPU solvers like IPOPT through CasADi,
 to assess both raw speedups and the effect of GPU-aware sparsity and parallelism on solver performance.
 
-\section{Alternative tools}
+\begin{figure}
+\includegraphics[width=.45\textwidth]{goddard-a100.jpg}
+\caption{xxxx}
+\label{fig1}
+\end{figure}
 
-Several Julia packages support optimization over infinite-dimensional spaces.  
-For example, \texttt{InfiniteOpt.jl} extends JuMP to express models involving measures, function-valued variables, and continuous domains, with applications to PDE-constrained or stochastic programs.  
-However, its emphasis is on symbolic modeling and problem transcription, rather than on GPU-parallel execution.
+ \begin{figure}
+\includegraphics[width=.45\textwidth]{quadrotor-a100.jpg}
+\caption{xxxx}
+\label{fig2}
+\end{figure}
 
-In contrast, our stack \texttt{OptimalControl.jl}, \texttt{ExaModels.jl}, \texttt{MadNLP.jl}, and \texttt{CUDSS.jl} targets direct OCP formulations transcribed into large-scale sparse NLPs, solved natively on GPUs.
+ \begin{figure}
+\includegraphics[width=.45\textwidth]{goddard-h100.jpg}
+\caption{xxxx}
+\label{fig3}
+\end{figure}
+ 
+\begin{figure}
+\includegraphics[width=.45\textwidth]{quadrotor-h100.jpg}
+\caption{xxxx}
+\label{fig4}
+\end{figure}
 
-These two approaches are complementary: \texttt{InfiniteOpt.jl} enables high-level modeling for function space problems, while our stack delivers efficient GPU execution for structured, time-discretized OCPs.
+%% \section{Alternative tools} % redundant with section 2
+%% Several Julia packages support optimization over infinite-dimensional spaces.  
+%% For example, \texttt{InfiniteOpt.jl} extends JuMP to express models involving measures, function-valued variables, and continuous domains, with applications to PDE-constrained or stochastic programs.  
+%% However, its emphasis is on symbolic modeling and problem transcription, rather than on GPU-parallel execution.
+%% 
+%% In contrast, our stack \texttt{OptimalControl.jl}, \texttt{ExaModels.jl}, \texttt{MadNLP.jl}, and \texttt{CUDSS.jl} targets direct OCP formulations transcribed into large-scale sparse NLPs, solved natively on GPUs.
+%% 
+%% These two approaches are complementary: \texttt{InfiniteOpt.jl} enables high-level modeling for function space problems, while our stack delivers efficient GPU execution for structured, time-discretized OCPs.
 
 \section{Discussion}
-
 Julia’s combination of high-level abstractions, metaprogramming, and GPU compiler infrastructure makes it uniquely suited for building performant yet expressive tools for optimal control.  
 Our results show that leveraging parallelism in both model structure and solver internals unlocks substantial speedups, enabling new applications in learning, robotics, and embedded optimization.
 
@@ -385,4 +465,165 @@ Overall, the synergy between Julia’s GPU tools and the SIMD structure of direc
 % \bibliographystyle{abbrvnat}
 \bibliographystyle{siamplain}
 \bibliography{abbrv,main}
+
+\appendix 
+
+\section{Descriptions of the control problems used for the benchmark}
+
+\begin{minted}{julia}
+# Goddard problem
+
+r0 = 1.0     
+v0 = 0.0
+m0 = 1.0 
+vmax = 0.1 
+mf = 0.6   
+Cd = 310.0
+Tmax = 3.5
+\end{minted}
+
+%% β = 500.0
+%% b = 2.0
+%%
+%% o = @def begin
+%% 
+%%     tf ∈ R, variable
+%%     t ∈ [0, tf], time
+%%     x = (r, v, m) ∈ R³, state
+%%     u ∈ R, control
+%% 
+%%     x(0) == [r0, v0, m0]
+%%     m(tf) == mf
+%%     0 ≤ u(t) ≤ 1
+%%     r(t) ≥ r0
+%%     0 ≤ v(t) ≤ vmax
+%% 
+%%     ∂(r)(t) == v(t)
+%%     ∂(v)(t) == -Cd * v(t)^2 *
+%%       exp(-β * (r(t) - 1)) / m(t) - 1 /
+%%       r(t)^2 + u(t) * Tmax / m(t)
+%%     ∂(m)(t) == -b * Tmax * u(t)
+%% 
+%%     r(tf) → max
+%% 
+%% end
+%% \end{minted}
+%% 
+%% \begin{minted}{julia}
+%% # Quadrotor problem
+%% 
+%% T = 1
+%% g = 9.8
+%% r = 0.1
+%% 
+%% o = @def begin
+%%     
+%%     t ∈ [0, T], time
+%%     x ∈ R⁹, state
+%%     u ∈ R⁴, control
+%% 
+%%     x(0) == zeros(9)
+%% 
+%%     ∂(x₁)(t) == x₂(t)
+%%     ∂(x₂)(t) == u₁(t) * cos(x₇(t)) *
+%%       sin(x₈(t)) * cos(x₉(t)) + u₁(t) *
+%%       sin(x₇(t)) * sin(x₉(t))
+%%     ∂(x₃)(t) == x₄(t)
+%%     ∂(x₄)(t) == u₁(t) * cos(x₇(t)) *
+%%       sin(x₈(t)) * sin(x₉(t)) - u₁(t) *
+%%       sin(x₇(t)) * cos(x₉(t))
+%%     ∂(x₅)(t) == x₆(t)
+%%     ∂(x₆)(t) == u₁(t) * cos(x₇(t)) * cos(x₈(t)) - g 
+%%     ∂(x₇)(t) == u₂(t) * cos(x₇(t)) / cos(x₈(t)) +
+%%       u₃(t) * sin(x₇(t)) / cos(x₈(t))
+%%     ∂(x₈)(t) ==-u₂(t) * sin(x₇(t)) + u₃(t) * cos(x₇(t))
+%%     ∂(x₉)(t) == u₂(t) * cos(x₇(t)) * tan(x₈(t)) +
+%%       u₃(t) * sin(x₇(t)) * tan(x₈(t)) + u₄(t)
+%% 
+%%     dt1 = sin(2π * t / T)
+%%     dt3 = 2sin(4π * t / T)
+%%     dt5 = 2t / T
+%% 
+%%     0.5∫( (x₁(t) - dt1)^2 + (x₃(t) - dt3)^2 +
+%%       (x₅(t) - dt5)^2 + x₇(t)^2 + x₈(t)^2 +
+%%       x₉(t)^2 + r *
+%%       (u₁(t)^2 + u₂(t)^2 + u₃(t)^2 + u₄(t)^2) ) → min
+%% 
+%% end
+%% \end{minted}
+
+\section{GPU detailed configurations}
+
+\noindent Configuration for the A100 runs:
+
+\begin{verbatim}
+julia> CUDA.versioninfo()
+CUDA runtime 12.9, artifact installation
+CUDA driver 12.9
+NVIDIA driver 575.57.8
+
+CUDA libraries: 
+- CUBLAS: 12.9.1
+- CURAND: 10.3.10
+- CUFFT: 11.4.1
+- CUSOLVER: 11.7.5
+- CUSPARSE: 12.5.10
+- CUPTI: 2025.2.1 (API 28.0.0)
+- NVML: 12.0.0+575.57.8
+
+Julia packages: 
+- CUDA: 5.8.2
+- CUDA_Driver_jll: 0.13.1+0
+- CUDA_Runtime_jll: 0.17.1+0
+
+Toolchain:
+- Julia: 1.11.6
+- LLVM: 16.0.6
+
+1 device:
+  0: NVIDIA A100-PCIE-40GB
+     (sm_80, 39.490 GiB / 40.000 GiB available)
+\end{verbatim
+
+\noindent Configuration for the H100 runs:
+
+\begin{verbatim}
+julia> CUDA.versioninfo()
+CUDA toolchain: 
+- runtime 12.9, artifact installation
+- driver 580.65.6 for 13.0
+- compiler 12.9
+
+CUDA libraries: 
+- CUBLAS: 12.9.1
+- CURAND: 10.3.10
+- CUFFT: 11.4.1
+- CUSOLVER: 11.7.5
+- CUSPARSE: 12.5.10
+- CUPTI: 2025.2.1 (API 12.9.1)
+- NVML: 13.0.0+580.65.6
+
+Julia packages: 
+- CUDA: 5.8.2
+- CUDA_Driver_jll: 13.0.0+0
+- CUDA_Compiler_jll: 0.2.0+2
+- CUDA_Runtime_jll: 0.19.0+0
+
+Toolchain:
+- Julia: 1.11.6
+- LLVM: 16.0.6
+
+Preferences:
+- CUDA_Runtime_jll.version: 12.9
+
+4 devices:
+  0: NVIDIA H100 80GB HBM3
+     (sm_90, 79.175 GiB / 79.647 GiB available)
+  1: NVIDIA H100 80GB HBM3
+     (sm_90, 79.175 GiB / 79.647 GiB available)
+  2: NVIDIA H100 80GB HBM3
+     (sm_90, 79.175 GiB / 79.647 GiB available)
+  3: NVIDIA H100 80GB HBM3
+     (sm_90, 79.175 GiB / 79.647 GiB available)
+\end{verbatim}
 \end{document}
