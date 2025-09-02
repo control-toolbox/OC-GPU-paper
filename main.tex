@@ -181,13 +181,13 @@ Unauthorized reproduction of this article is prohibited}}
 
 Solving large-scale nonlinear optimal control problems is computationally demanding, especially with fine discretizations or real-time requirements.  
 While GPUs offer massive parallelism well-suited to these problems, fully exploiting their potential remains challenging due to the complexity of modeling, differentiation, and solver integration.
-
+%
 We present a fully GPU-accelerated workflow, entirely built in Julia~\cite{bezanson2017julia}.
 Continuous-time dynamics are discretized with \texttt{OptimalControl.jl}~\cite{Caillau_OptimalControl_jl_a_Julia} into structured, sparse nonlinear programs.  
 These are compiled with \texttt{ExaModels.jl}~\cite{shin2024accelerating} into GPU kernels that preserve sparsity and compute derivatives in a single pass, enabling efficient SIMD parallelism.
-
+%
 Problems are solved on NVIDIA GPUs using the interior-point solver \texttt{MadNLP.jl}~\cite{shin2021graph} and the sparse linear solver \texttt{CUDSS.jl}~\cite{Montoison_CUDSS_jl_Julia_interface}, enabling end-to-end acceleration from modeling to solving.
-
+%
 We demonstrate the performance of this approach on benchmark problems solved on NVIDIA A100 and H100 GPU.
 
 %\textcolor{red}{We also examine generalizations to hybrid systems characterized by discrete-continuous interactions, Pontryagin-based shooting transcriptions, and infinite-horizon or functional programs modeled with \texttt{InfiniteOpt.jl}~\cite{pulsipher2022unifying}. $\rightarrow$ J-B}
@@ -222,23 +222,23 @@ Optimal control problems (OCPs) aim to find control inputs for dynamical systems
 Direct transcription methods discretize these infinite-dimensional problems into large-scale nonlinear programs (NLPs).
 These NLPs exhibit a sparse structure arising from time discretization: each node introduces state and control variables linked by nonlinear equality constraints enforcing the system dynamics.
 Second-order methods, such as interior-point solvers, exploit this structure. % for efficient problem solution.
-
+%
 Most existing optimal control toolchains target CPU execution.
 For example, CasADi~\cite{Andersson2019} constructs symbolic expressions evaluated just-in-time or exported as C code, typically solved by CPU solvers like IPOPT~\cite{wachter2006implementation} or KNITRO~\cite{byrd2006k}, which rely on CPU linear solvers such as PARDISO~\cite{schenk2004solving}, MUMPS~\cite{amestoy2000mumps}, or HSL~\cite{fowkes2024libhsl}.
-
+%
 Other frameworks such as ACADO~\cite{houska2011acado}, 
 \texttt{InfiniteOpt.jl}~\cite{pulsipher2022unifying} (that cleverly leverages 
 the modelling power of JuMP~\cite{dunning2017jump}),
 Crocoddyl~\cite{mastalli2020crocoddyl}, OCS2~\cite{OCS2} and others
 %and AMPL~\cite{fourer1990ampl}
 follow the same CPU-centric paradigm.
-
+%
 This CPU focus limits scalability and real-time performance for large or time-critical problems that could benefit from GPU parallelism.
 While some libraries provide GPU-accelerated components, none deliver a fully integrated, GPU-native workflow for nonlinear optimal control.
-
+%
 Our work fills this gap with a GPU-first toolchain that unifies modeling, differentiation, and solver execution, addressing the computational challenges of efficient modeling, automatic differentiation, and sparse NLP solving at large scale.
 
-\section{SIMD parallelism in direct optimal control}
+\section{SIMD parallelism in direct optimal control} \label{s3}
 When discretized by \emph{direct transcription}, optimal control problems (OCPs) possess an inherent structure that naturally supports SIMD parallelism. 
 Consider indeed an optimal control with state $x(t) \in \mathbf{R}^n$, and control $u(t) \in \mathbf{R}^m$. Assume that the dynamics is modeled by the ODE
 $$ \dot{x}(t) = f(x(t), u(t)), $$
@@ -294,16 +294,16 @@ This massive SIMD parallelism allows for a very efficient GPU solving. GPU accel
 \section{A Julia-based GPU optimization stack}
 Julia offers a powerful and flexible environment for GPU programming, providing multiple levels of abstraction to suit different use cases.
 The package \texttt{CUDA.jl}~\cite{besard2018juliagpu,besard2019prototyping} provides direct access to NVIDIA GPUs, supporting easy array-based programming as well as explicit CUDA kernel writing and launching.
-
+%
 For vendor-agnostic and portable GPU development, \texttt{KernelAbstractions.jl}~\cite{Churavy_KernelAbstractions_jl} allows writing GPU kernels in Julia that can target multiple backends such as CUDA (NVIDIA), ROCm (AMD), oneAPI (Intel), and Metal (Apple).
-
+%
 This ecosystem leverages the LLVM compiler infrastructure and vendor APIs to generate efficient native GPU code directly from pure high-level Julia code.
 It allows users to exploit GPUs without requiring any knowledge of GPU programming.
 For instance, \texttt{ExaModels.jl} builds on \texttt{KernelAbstractions.jl} to automatically generate specialized GPU kernels for parallel evaluation of ODE residuals, Jacobians, and Hessians needed in optimal control problems.
-
+%
 We build on this ecosystem to create a complete GPU-accelerated toolchain spanning modeling, differentiation, and solving.
 This results into a fully Julia-native workflow for modeling and solving ODE-constrained optimal control problems on GPU.
-
+%
 Key components of our stack include:
 
 \begin{itemize}
@@ -313,115 +313,173 @@ Key components of our stack include:
     \item \texttt{MadNLP.jl}: a nonlinear programming solver implementing a filter line-search interior-point method, with GPU-accelerated linear algebra support.
     \item \texttt{CUDSS.jl}: a Julia wrapper around NVIDIA’s \texttt{cuDSS} sparse solver, enabling GPU-based sparse matrix factorizations essential for interior-point methods.
 \end{itemize}
-
-Together, these components form a high-level, performant stack that compiles intuitive Julia OCP models into efficient GPU code, achieving substantial speedups while maintaining usability.
+\noindent Together, these components form a high-level, performant stack that compiles intuitive Julia OCP models into efficient GPU code, achieving substantial speedups while maintaining usability.
 
 Our approach offers several advantages:
 \begin{itemize}
-    \item \textbf{Abstraction}: intuitive problem definition via Julia DSLs without requiring manual GPU programming.
+    \item \textbf{Abstraction}: intuitive problem definition via Julia DSLs (Domain Specific Languages) without requiring manual GPU programming.
     \item \textbf{Performance}: JIT compilation, SIMD parallelism, and GPU-accelerated sparse linear algebra deliver significant runtime improvements.
     \item \textbf{Portability}: while symbolic modeling and kernel generation are backend-agnostic, the current bottleneck lies in sparse linear solvers which remain CUDA-specific; however, the framework is designed to adapt as compatible components become available.
 \end{itemize}
 
 \section{From optimal control models to SIMD abstraction}
+To illustrate the transcription from the infinite dimensional setting towards a discretized optimisation suited for SIMD parallelism, consider the following elementary optimal control problem with a state function, $x(t)$, valued in $\mathbf{R}^2$, and a scalar control, $u(t)$: minimize the (squared) $L^2$-norm of the control over the fixed time interval $[0,1]$,
+$$ (1/2) \int_0^1 u^2(t)\,\mathrm{d}t \to \min, $$
+under the dynamical constraint
+$$ \dot{x}_1(t) = x_2(t),\quad \dot{x}_2(t) = u(t), $$
+and boundary conditions
+$$ x(0) = (-1, 0),\quad x(1) = (0,0). $$
+The strength of the DSL of the package \texttt{OptimalControl.jl} is to offer a syntax as close as possible to this mathematical formulation.\footnote{Note that one can actually use unicode characters to denote derivatives, integral, \emph{etc.}, making this closeness even more striking.} The translation of this optimal control problem so reads:
 
 \begin{minted}{julia}
 ocp = @def begin
-    t ∈ [0, 1], time
-    x ∈ R², state
-    u ∈ R, control
+    t in [0, 1], time
+    x in R^2, state
+    u in R, control
     x(0) == [-1, 0]
     x(1) == [0, 0]
-    ∂(x₁)(t) == x₂(t)
-    ∂(x₂)(t) == u(t)
-    ∫( 0.5u(t)^2 ) → min
+    derivative(x1)(t) == x2(t)
+    derivative(x2)(t) == u(t)
+    integral( 0.5u(t)^2 ) => min
 end
 \end{minted}
 
+The intial and final times are fixed in this case but they could be additional unknowns (see, Appendix \ref{sa1}, where the Goddard problem used for benchmark is modeled and has a free final time), and the user could declare extra finite dimensional parameters (or \emph{variables}) to be optimized as well. There could also be additional constraints on the values of the state, of the control, \emph{etc.}
+At this stage the crux is to use Julia macro programming to very easily parse this 
+abstract description and compile on the fly to a discretized nonlinear optimisation problem. To this end, we take advantage of this things: (i) the DSL syntax is fully compatible with standard Julia, which allows us to leverage the built-in language lexical and syntactical parsers; (ii) pattern matching (we rely on \texttt{MLStyle.jl} \cite{xxxx}) to actually enrich Julia's syntax with additional keyword (such as \verb+state+ to declare the state, and so on) and implement the semantic pass to generates the code for the discretized math program.
+This discretized code is an \texttt{ExaModels.jl} model, which allows to declare 
+optimization variables (finite dimensional vector or arrays), constraints and cost.
+Regarding constraints, \texttt{ExaModels.jl} uses \emph{generators} in the form of \verb+for+ loop statements to model the SIMD abstraction, ensuring that the function
+at the heart of the statement is mapped towards a \emph{kernel} (this is where \texttt{KernelAbstractions.jl} comes into play) and efficiently evaluated by the solver. All in all, the process merely is a compilation from \texttt{OptimalControl.jl} DSL, well suited for mathematical control abstractions, into \texttt{ExaModels.jl} DSL, tailored to describe optimization problems with strong SIMD potentialities (as explained in Section~\ref{s3}, this is indeed the case for discretizations of optimal control problems). 
+This transcription process is mostly parametrized by the numerical scheme used to discretize the ODE.
+%
+A very important outcome of having a DSL for \texttt{ExaModels.jl} models is the ability for the package to automatically differentiate the mathematical expressions involved. As derivatives up to order two are required by cutting edge nonlinear solvers such as Ipopt or \emph{MadNLP.jl}, automatic differentiation (AD) is a crucial requirement.
+
+Let us have a quick look a the generated code for this basic example. It is embedded into a function whose parameters reflect the various factors involved in the transcription process: numerical scheme used (here, a trapezoidal one), size of the (here uniform) time grid, backend for GPU computation (currently available backends are for CUDA and AMD), and initialisations for variable, state and control (the default being to use nonzero constant values on the whole grid for all):
+
 {\small
 \begin{minted}{julia}
-function (; scheme = :trapeze, grid_size = 250, backend = nothing, init = (0.1, 0.1, 0.1), base_type = Float64)
+function (; scheme=:trapeze, grid_size=250,
+  backend=nothing, init=(0.1, 0.1, 0.1),
+  base_type = Float64)
 \end{minted}
 }
+
+\noindent The state declaration is compiled into an \texttt{ExaModels.jl} variable declaration, here a $2 \times (N + 1)$ array where $N$ is the grid size. Note that lower and upper bounds can be provided at this step (with a first \verb+for+ statement to vectorize the constraint over all grid points), as well as initial values for the optimizer and base type for vector elements (here 64 bit floating point). The whole declaration block is wrapped in a \verb+try ... catch+ statement so that syntactic (or semantic) errors can be returned to the user at runtime:
 
 {\small
 \begin{minted}{julia}
 x = begin
-    local ex
-    try
-        variable(var"p_ocp##266", 2, 0:grid_size; lvar = [var"l_x##271"[var"i##275"] for (var"i##275", var"j##276") = Base.product(1:2, 0:grid_size)], uvar = [var"u_x##272"[var"i##275"] for (var"i##275", var"j##276") = Base.product(1:2, 0:grid_size)], start = init[2])
+  local ex
+  try
+    variable(var"p_ocp##266", 2, 0:grid_size;
+      lvar = [var"l_x##271"[var"i##275"]
+      for (var"i##275", var"j##276") =
+      Base.product(1:2, 0:grid_size)],
+      uvar = [var"u_x##272"[var"i##275"]
+      for (var"i##275", var"j##276") =
+      Base.product(1:2, 0:grid_size)],
+      start = init[2])
     catch ex
-        println("Line ", 2, ": ", "(x ∈ R ^ 2, state)")
-        throw(ex)
-    end
+      println("Line ", 2, ": ",
+        "(x in R^2, state)")
+      throw(ex)
+  end
 end
 \end{minted}
 }
 
+\noindent The boundary constraint on the initial state needs to be vectorized over all dimensions of the state, which is performed thanks to the \verb+for+ generator. Note the dimension check (at runtime, since in general the given bounds could depend on the actual computation of previous expressions) of the bounds \emph{wrt.} the length of the state range that is addressed:
 {\small
 \begin{minted}{julia}
-length([-1, 0]) == length([-1, 0]) == length(1:2) || throw("wrong bound dimension")
-constraint(var"p_ocp##266", (x[var"i##283", 0] for var"i##283" = 1:2); lcon = [-1, 0], ucon = [-1, 0])
-# println("Line ", 4, ": ", "x(0) == [-1, 0]")
+length([-1, 0]) == length([-1, 0]) ==
+  length(1:2) || throw("wrong bound dimension")
+constraint(var"p_ocp##266", (x[var"i##283", 0]
+  for var"i##283" = 1:2); lcon = [-1, 0],
+  ucon = [-1, 0])
 \end{minted}
 }
+
+\noindent The first equation of the ODE system is discretized using the trapezoidal scheme, and the corresponding expression (here the right hand side is just $x_2(t)$) is declared thanks to the \verb+for+ generator tailored for SIMD abstraction:
 
 {\small
 \begin{minted}{julia} 
-constraint(var"p_ocp##266j", ((x[1, var"j##291" + 1] - x[1, var"j##291"]) - (var"dt##268" * (x[2, var"j##291"] + x[2, var"j##291" + 1])) / 2 for var"j##291" = 0:grid_size - 1))
-constraint(var"p_ocp##266", ((x[1, var"j##291" + 1] - x[1, var"j##291"]) - var"dt##268" * x[2, var"j##291"] for var"j##291" = 0:grid_size - 1))
-constraint(var"p_ocp##266", ((x[1, var"j##291" + 1] - x[1, var"j##291"]) - var"dt##268" * x[2, var"j##291" + 1] for var"j##291" = 0:grid_size - 1))
-# println("Line ", 6, ": ", "(derivative(x₁))(t) == x₂(t)")
+constraint(var"p_ocp##266j",
+  ((x[1, var"j##291" + 1] - x[1, var"j##291"])
+  - (var"dt##268" * (x[2, var"j##291"] +
+  x[2, var"j##291" + 1])) / 2
+  for var"j##291" = 0:grid_size - 1))
 \end{minted}
 }
 
+\noindent The same goes on for the second dimension of the ODE, and for the Lagrange integral cost as well, where the same numerical scheme (trapezoidal rule again) is employed for consistency:
+ 
 {\small
 \begin{minted}{julia}
-objective(var"p_ocp##266", ((1 * var"dt##268" * (0.5 * var"u##277"[1, var"j##299"] ^ 2)) / 2 for var"j##299" = (0, grid_size)))
-objective(var"p_ocp##266", (1 * var"dt##268" * (0.5 * var"u##277"[1, var"j##299"] ^ 2) for var"j##299" = 1:grid_size - 1))
-# println("Line ", 8, ": ", "integral(0.5 * u(t) ^ 2) → min")
+objective(var"p_ocp##266", ((1 * var"dt##268" *
+  (0.5 * var"u##277"[1, var"j##299"] ^ 2)) / 2
+  for var"j##299" = (0, grid_size)))
+objective(var"p_ocp##266", (1 * var"dt##268" *
+  (0.5 * var"u##277"[1, var"j##299"] ^ 2)
+  for var"j##299" = 1:grid_size - 1))
 \end{minted}
 }
+
+\noindent The generated code returns an \texttt{ExaModels.jl} model that, when instanciated with the proper backend (\emph{e.g.}, \verb+CUDABackend+ from \texttt{CUDA.jl}) can be passed to \texttt{MadNLP.jl} to be solved on GPU. Such numerical tests, both on CPU and GPU, are presented in the next section on two larger nonlinear optimal control problems.
            
 \section{Benchmark problems}
 We evaluate our GPU-accelerated stack on two optimal control problems:
 \begin{itemize}
     \item the Goddard rocket problem,
-    \item a quadrotor control problem.
+    \item a Quadrotor control problem.
 \end{itemize}
-Already discretized versions of these problems (using, \emph{e.g.}, Euler or trapezoidal schemes) can be found in standard collections of optimization problems such as COPS \cite{xxxx} (see also the Julia port of this collection in \texttt{COPSBenchmark.jl} \cite{xxxx}). Their infinite dimensional (non discretized) counterpart is also available in the more recent open collection of control problems \texttt{OptimalControlProblems.jl} \cite{xxxx}.
-
+Already discretized versions of these problems (using, \emph{e.g.}, Euler or trapezoidal schemes) can be found in standard collections of optimization problems such as COPS \cite{xxxx} (see also the Julia port of this collection in \texttt{COPSBenchmark.jl} \cite{xxxx}). Their infinite dimensional (non discretized) counterpart is also available in the more recent open collection of control problems \texttt{OptimalControlProblems.jl} \cite{xxxx}. The full models using \texttt{OptimalControl.jl} are detailed in the supplementary material (check Appendix \ref{sa1}).
 %https://github.com/MadNLP/COPSBenchmark.jl
-
 % debug: a word on the number of iterations, on the problems (state dim, sing arcs etc. for goddard...), scheme used...
-
-These problems are sourced from the COPS benchmark suite~\cite{bondarenko2000cops} and available through the Julia packages \texttt{COPSBenchmarks.jl} and \texttt{CTBenchmarks.jl}.
-
+% These problems are sourced from the COPS benchmark suite~\cite{bondarenko2000cops} and available through the Julia packages \texttt{COPSBenchmarks.jl} and \texttt{CTBenchmarks.jl}.
+%
 We compare GPU and CPU performance,
 % including against CPU solvers like IPOPT through CasADi,
 to assess both raw speedups and the effect of GPU-aware sparsity and parallelism on solver performance.
+For the considered setups (see Appendix \ref{sa2} for details on the hardware on the Julia packages used), as expected performance is better on H100 than A100, with comparable GPU over CPU speed-ups over both problems.
+
+On the Goddard problem, the total dimension of the discretized problem (variables plus constraints) is about $10 N$, where $N$ is the grid size. Although the problem is standard in the control literature, its solution exhibits an intricate structure for the choosen parameters with a control that is comprised of four subarcs (a concatenation of bang-singular-boundary-bang arcs). In particular, the existence of a singular arc is well known to be a source of difficulty for direct methods. Convergence towards the same objective (up to minor changes in precision depending on the number of points) is nonetheless obtained for all solves with the same (trivial) initialization, and the number of iterates remains very close on CPU and GPU for all the tested grid sizes.
+On the A100, GPU is faster than CPU after $N = 2000$, see Figure~\ref{fig1}.
+On the H100, GPU beats CPU after $N = 5000$, see Figure~\ref{fig2}.
+On both architectures, a speed-up about $2$ is obtained.
+The largest problem solved on the H100 has size about $2e6$ with a run time about $15$~seconds.
+
+On the Quarotor problem, the total dimension of the discretized problem (variables plus constraints) is about $20 N$, where $N$ is the grid size.
+The particular instance of the problem is unconstrained (neither control nor state
+constraint, contrary to the previous Goddard example) but has a strongly nonlinear dynamics. 
+As before, convergence is obtained for all architectures and grid sizes
+with comparable number of iterates between CPU and GPU.
+On the A100, GPU is faster than CPU after $N = 500$, see Figure~\ref{fig2}.
+On the H100, GPU beats CPU after $N = 750$, see Figure~\ref{fig4}.
+On both architectures, a speed-up about $5$ is obtained.
+The largest problem solved on the H100 has size about $4e6$ with a run time about $13$~seconds.
 
 \begin{figure}
 \includegraphics[width=.45\textwidth]{goddard-a100.jpg}
-\caption{xxxx}
+\caption{Goddard problem, A100 solve. The grid size ranges from to $N = 1e2$ to $N = 1e5$.}
 \label{fig1}
 \end{figure}
 
  \begin{figure}
-\includegraphics[width=.45\textwidth]{quadrotor-a100.jpg}
-\caption{xxxx}
-\label{fig2}
-\end{figure}
-
- \begin{figure}
 \includegraphics[width=.45\textwidth]{goddard-h100.jpg}
-\caption{xxxx}
+\caption{Goddard problem, H100 solve. The grid size ranges from to $N = 1e2$ to $N = 2e5$.}
 \label{fig3}
 \end{figure}
  
 \begin{figure}
+\includegraphics[width=.45\textwidth]{quadrotor-a100.jpg}
+\caption{Quadrotor problem, A100 solve. The grid size ranges from to $N = 1e2$ to $N = 1e5$.}
+\label{fig2}
+\end{figure}
+
+\begin{figure}
 \includegraphics[width=.45\textwidth]{quadrotor-h100.jpg}
-\caption{xxxx}
+\caption{Quadrotor problem, H100 solve. The grid size ranges from to $N = 1e2$ to $N = 2e5$.}
 \label{fig4}
 \end{figure}
 
@@ -436,40 +494,25 @@ to assess both raw speedups and the effect of GPU-aware sparsity and parallelism
 
 \section{Discussion}
 Julia’s combination of high-level abstractions, metaprogramming, and GPU compiler infrastructure makes it uniquely suited for building performant yet expressive tools for optimal control.  
-Our results show that leveraging parallelism in both model structure and solver internals unlocks substantial speedups, enabling new applications in learning, robotics, and embedded optimization.
-
+Our results show that leveraging parallelism in both model structure and solver internals unlocks substantial speedups, enabling new applications in aerospace engineering, quantum control, computational biology, learning and more. (Check \href{https://control-toolbox.org}{control-toolbox.org} for more on applications.)
 % This GPU-based stack allows for large numbers of rollout or sensitivity evaluations in parallel, which is particularly valuable in adaptive MPC, policy learning, or hardware-in-the-loop planning.  
-
 Future extensions include support for multi-GPU execution, as well as tighter integration with differentiable programming workflows.
 % MadNCL, MadIPM, HybridKKT, etc...
+Overall, the synergy between Julia GPU tools and the SIMD structure of direct optimal control yields a powerful solution for solving challenging OCPs at scale.
 
-Overall, the synergy between Julia’s GPU tools and the SIMD structure of direct optimal control yields a powerful solution for solving challenging OCPs at scale.
-
-% Plan
-% Introduction -- Context
-% controle optimal ODE / direct methods / NLP optim structuré / méthodes indirectes?
-% Justification GPU -- first GPU implementation OC / structure adaptée au GPU (massivement SIMD avec la grille)
-% Sparsity + SIMD --> large-scale GPUs
-% Other tools (CASADI / Ipopt / HSL) but Python and CPU audience (abstraction level -- building blocks?)
-% How to handle sparsity on GPU? AD (DSL examodels) + LA (CUDSS.jl)
-% Julia is relevant (compilation / metaprog / GPU / PORTABILITY / high-level / efficient)
-% KernelABstractions.jl (kernels paramétrique grille)
-% OC.jl -> ExaModels.jl -> MadNLP.jl -> CUDSS.jl
-% benchmarks
-% Benchmarking -- Goddard - quadrotor - swimmer (COPS?)
-% GH200 -- 480GB VRAM -- CPU vs GPU
-% Casadi + Ipopt gain?
-% InfiniteOpt.jl vs OC.jl on CPU
-
-\small
+%\small
 % \bibliographystyle{abbrvnat}
 \bibliographystyle{siamplain}
 \bibliography{abbrv,main}
 
 \appendix 
 
-\section{Descriptions of the control problems used for the benchmark}
+\section{Supplementary material}
 
+\subsection{Descriptions of the control problems used for the benchmark}
+\label{sa1}
+
+{\small
 \begin{minted}{julia}
 # Goddard problem
 
@@ -480,83 +523,93 @@ vmax = 0.1
 mf = 0.6   
 Cd = 310.0
 Tmax = 3.5
+
+beta = 500.0
+b = 2.0
+
+o = @def begin
+
+    tf in R, variable
+    t in [0, tf], time
+    x = (r, v, m) in R^3, state
+    u in R, control
+
+    x(0) == [r0, v0, m0]
+    m(tf) == mf
+    0 <= u(t) <= 1
+    r(t) >= r0
+    0 <= v(t) <= vmax
+
+    derivative(r)(t) == v(t)
+    derivative(v)(t) == -Cd * v(t)^2 *
+      exp(-beta * (r(t) - 1)) / m(t) - 1 /
+      r(t)^2 + u(t) * Tmax / m(t)
+    derivative(m)(t) == -b * Tmax * u(t)
+
+    r(tf) => max
+
+end
 \end{minted}
+}
 
-%% β = 500.0
-%% b = 2.0
-%%
-%% o = @def begin
-%% 
-%%     tf ∈ R, variable
-%%     t ∈ [0, tf], time
-%%     x = (r, v, m) ∈ R³, state
-%%     u ∈ R, control
-%% 
-%%     x(0) == [r0, v0, m0]
-%%     m(tf) == mf
-%%     0 ≤ u(t) ≤ 1
-%%     r(t) ≥ r0
-%%     0 ≤ v(t) ≤ vmax
-%% 
-%%     ∂(r)(t) == v(t)
-%%     ∂(v)(t) == -Cd * v(t)^2 *
-%%       exp(-β * (r(t) - 1)) / m(t) - 1 /
-%%       r(t)^2 + u(t) * Tmax / m(t)
-%%     ∂(m)(t) == -b * Tmax * u(t)
-%% 
-%%     r(tf) → max
-%% 
-%% end
-%% \end{minted}
-%% 
-%% \begin{minted}{julia}
-%% # Quadrotor problem
-%% 
-%% T = 1
-%% g = 9.8
-%% r = 0.1
-%% 
-%% o = @def begin
-%%     
-%%     t ∈ [0, T], time
-%%     x ∈ R⁹, state
-%%     u ∈ R⁴, control
-%% 
-%%     x(0) == zeros(9)
-%% 
-%%     ∂(x₁)(t) == x₂(t)
-%%     ∂(x₂)(t) == u₁(t) * cos(x₇(t)) *
-%%       sin(x₈(t)) * cos(x₉(t)) + u₁(t) *
-%%       sin(x₇(t)) * sin(x₉(t))
-%%     ∂(x₃)(t) == x₄(t)
-%%     ∂(x₄)(t) == u₁(t) * cos(x₇(t)) *
-%%       sin(x₈(t)) * sin(x₉(t)) - u₁(t) *
-%%       sin(x₇(t)) * cos(x₉(t))
-%%     ∂(x₅)(t) == x₆(t)
-%%     ∂(x₆)(t) == u₁(t) * cos(x₇(t)) * cos(x₈(t)) - g 
-%%     ∂(x₇)(t) == u₂(t) * cos(x₇(t)) / cos(x₈(t)) +
-%%       u₃(t) * sin(x₇(t)) / cos(x₈(t))
-%%     ∂(x₈)(t) ==-u₂(t) * sin(x₇(t)) + u₃(t) * cos(x₇(t))
-%%     ∂(x₉)(t) == u₂(t) * cos(x₇(t)) * tan(x₈(t)) +
-%%       u₃(t) * sin(x₇(t)) * tan(x₈(t)) + u₄(t)
-%% 
-%%     dt1 = sin(2π * t / T)
-%%     dt3 = 2sin(4π * t / T)
-%%     dt5 = 2t / T
-%% 
-%%     0.5∫( (x₁(t) - dt1)^2 + (x₃(t) - dt3)^2 +
-%%       (x₅(t) - dt5)^2 + x₇(t)^2 + x₈(t)^2 +
-%%       x₉(t)^2 + r *
-%%       (u₁(t)^2 + u₂(t)^2 + u₃(t)^2 + u₄(t)^2) ) → min
-%% 
-%% end
-%% \end{minted}
+{\small
+\begin{minted}{julia}
+# Quadrotor problem
 
-\section{GPU detailed configurations}
+T = 1
+g = 9.8
+r = 0.1
 
-\noindent Configuration for the A100 runs:
+o = @def begin
+    
+    t in [0, T], time
+    x in R^9, state
+    u in R^4, control
 
-\begin{verbatim}
+    x(0) == zeros(9)
+
+    derivative(x1)(t) == x2(t)
+    derivative(x2)(t) == u1(t) * cos(x7(t)) *
+      sin(x8(t)) * cos(x9(t)) + u1(t) *
+      sin(x7(t)) * sin(x9(t))
+    derivative(x3)(t) == x4(t)
+    derivative(x4)(t) == u1(t) * cos(x7(t)) *
+      sin(x8(t)) * sin(x9(t)) - u1(t) *
+      sin(x7(t)) * cos(x9(t))
+    derivative(x5)(t) == x6(t)
+    derivative(x6)(t) == u1(t) * cos(x7(t)) *
+      cos(x8(t)) - g 
+    derivative(x7)(t) == u2(t) * cos(x7(t)) /
+      cos(x8(t)) + u3(t) *
+      sin(x7(t)) / cos(x8(t))
+    derivative(x8)(t) ==-u2(t) * sin(x7(t)) +
+      u3(t) * cos(x7(t))
+    derivative(x9)(t) == u2(t) * cos(x7(t)) *
+      tan(x8(t)) + u3(t) * sin(x7(t)) *
+      tan(x8(t)) + u4(t)
+
+    dt1 = sin(2pi * t / T)
+    dt3 = 2sin(4pi * t / T)
+    dt5 = 2t / T
+
+    0.5integral( (x1(t) - dt1)^2 +
+      (x3(t) - dt3)^2 + (x5(t) - dt5)^2 +
+      x7(t)^2 + x8(t)^2 + x9(t)^2 + r *
+      (u1(t)^2 + u2(t)^2 +
+      u3(t)^2 + u4(t)^2) ) => min
+
+end
+\end{minted}
+}
+
+\subsection{GPU detailed configurations and results} \label{sa2}
+All runs performed with \texttt{OptimalControl.jl v1.1.1},
+\texttt{MadNLPMumps v0.5.1} and
+\texttt{MadNLPGPU v0.7.7}.\\
+
+\noindent \textbf{Configuration for the A100 runs}
+
+{\small \begin{verbatim}
 julia> CUDA.versioninfo()
 CUDA runtime 12.9, artifact installation
 CUDA driver 12.9
@@ -583,11 +636,11 @@ Toolchain:
 1 device:
   0: NVIDIA A100-PCIE-40GB
      (sm_80, 39.490 GiB / 40.000 GiB available)
-\end{verbatim
+\end{verbatim}}
 
-\noindent Configuration for the H100 runs:
+\noindent \textbf{Configuration for the H100 runs}
 
-\begin{verbatim}
+{\small \begin{verbatim}
 julia> CUDA.versioninfo()
 CUDA toolchain: 
 - runtime 12.9, artifact installation
@@ -625,5 +678,6 @@ Preferences:
      (sm_90, 79.175 GiB / 79.647 GiB available)
   3: NVIDIA H100 80GB HBM3
      (sm_90, 79.175 GiB / 79.647 GiB available)
-\end{verbatim}
+\end{verbatim}}
+
 \end{document}
