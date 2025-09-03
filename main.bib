@@ -14,8 +14,7 @@
       volume = {156},
       year = {2022},
       issn = {0098-1354},
-      doi = {https://doi.org/10.1016/j.compchemeng.2021.107567},
-      url = {https://www.sciencedirect.com/science/article/pii/S0098135421003458},
+      doi = {doi.org/10.1016/j.compchemeng.2021.107567},
       author = {Joshua L. Pulsipher and Weiqi Zhang and Tyler J. Hongisto and Victor M. Zavala},
 }
 
@@ -30,11 +29,11 @@
   publisher={Elsevier}
 }
 
-@software{Montoison_CUDSS_jl_Julia_interface,
+@misc{Montoison_CUDSS_jl_Julia_interface,
 author = {Montoison, Alexis},
 license = {MIT},
 title = {{CUDSS.jl: Julia interface for NVIDIA cuDSS}},
-url = {https://github.com/exanauts/CUDSS.jl}
+url = {github.com/exanauts/CUDSS.jl}
 }
 
 @article{Andersson2019,
@@ -49,12 +48,32 @@ url = {https://github.com/exanauts/CUDSS.jl}
   doi = {10.1007/s12532-018-0139-4}
 }
 
-@software{Caillau_OptimalControl_jl_a_Julia,
+@misc{MLStyle_jl,
+author = {Zhao, Taine},
+license = {["MIT"]},
+title = {{MLStyle.jl}},
+url = {thautwarm.github.io/MLStyle.jl},
+}
+
+@misc{COPS_jl,
+author = {Pacaud, Fran\cc ois and Migot, Tangi},
+license = {["MIT"]},
+title = {{COPSBenchmark.jl}},
+url = {github.com/MadNLP/COPSBenchmark.jl},
+}
+
+@misc{OC_jl,
 author = {Caillau, Jean-Baptiste and Cots, Olivier and Gergaud, Joseph and Martinon, Pierre and Sed, Sophia},
 doi = {10.5281/zenodo.13336563},
 license = {["MIT"]},
 title = {{OptimalControl.jl: a Julia package to model and solve optimal control problems with ODE's}},
-url = {https://control-toolbox.org/OptimalControl.jl}
+}
+
+@misc{OCP_jl,
+author = {Caillau, Jean-Baptiste and Cots, Olivier and Gergaud, Joseph and Martinon, Pierre},
+doi = {10.5281/zenodo.17013180},
+license = {["MIT"]},
+title = {{OptimalControlProblems.jl: a collection of optimal control problems with ODE's in Julia}},
 }
 
 @article{wachter2006implementation,
@@ -150,12 +169,12 @@ url = {https://control-toolbox.org/OptimalControl.jl}
 
 @misc{OCS2,
    title = {{OCS2}:  An  open  source  library  for  Optimal  Control  of  Switched Systems},
-   note = {[Online]. Available: \url{https://github.com/leggedrobotics/ocs2}},
+   url = {github.com/leggedrobotics/ocs2},
    author = {Farbod Farshidian and others}
 }
 
 @article{pacaud2024gpu,
-  title={GPU-accelerated nonlinear model predictive control with ExaModels and MadNLP},
+  title={GPU-accelerated nonlinear model predictive control with {ExaModels} and {MadNLP}},
   author={Pacaud, Fran{\c{c}}ois and Shin, Sungho},
   journal={arXiv e-prints},
   pages={arXiv--2403},
@@ -163,7 +182,7 @@ url = {https://control-toolbox.org/OptimalControl.jl}
 }
 
 @article{byrd2006k,
-  title={K nitro: An integrated package for nonlinear optimization},
+  title={Knitro: An integrated package for nonlinear optimization},
   author={Byrd, Richard H and Nocedal, Jorge and Waltz, Richard A},
   journal={Large-scale nonlinear optimization},
   pages={35--59},
@@ -171,11 +190,11 @@ url = {https://control-toolbox.org/OptimalControl.jl}
   publisher={Springer}
 }
 
-@software{Churavy_KernelAbstractions_jl,
+@misc{Churavy_KernelAbstractions_jl,
 author = {Churavy, Valentin},
 license = {MIT},
 title = {{KernelAbstractions.jl}},
-url = {https://github.com/JuliaGPU/KernelAbstractions.jl}
+url = {github.com/JuliaGPU/KernelAbstractions.jl}
 }
 
 % primary paper, detailing the GPU compiler and relevant aspects
@@ -207,4 +226,24 @@ url = {https://github.com/JuliaGPU/KernelAbstractions.jl}
   author={Bondarenko, Alexander S and Bortz, David M and Mor{\'e}, JJ},
   year={2000},
   institution={Argonne National Lab., IL (US)}
+}
+
+% LLVM
+@inproceedings{lattner2004llvm,
+  title={LLVM: A compilation framework for lifelong program analysis \& transformation},
+  author={Lattner, Chris and Adve, Vikram},
+  booktitle={International symposium on code generation and optimization, 2004. CGO 2004.},
+  pages={75--86},
+  year={2004},
+  organization={IEEE}
+}
+
+@misc{montoison-2025,
+      title={{GPU Implementation of Second-Order Linear and Nonlinear Programming Solvers}}, 
+      author={Alexis Montoison and François Pacaud and Sungho Shin and Mihai Anitescu},
+      year={2025},
+      eprint={2508.16094},
+      archivePrefix={arXiv},
+      primaryClass={math.OC},
+      url={https://arxiv.org/abs/2508.16094}, 
 }
