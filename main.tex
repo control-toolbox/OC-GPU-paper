@@ -560,7 +560,9 @@ Overall, the synergy between Julia GPU tools and the SIMD structure of direct op
 
 \subsection{Descriptions of the control problems used for the benchmark}
 \label{sa1}
-The complete code to reproduce the runs of Section~\ref{s6} can be retrieved at the following address: \href{https://github.com/control-toolbox/OC-GPU-paper}{\texttt{github.com/control-toolbox/OC-GPU-paper}}\\
+The complete code to reproduce the runs of Section~\ref{s6} can be retrieved at the following address:
+\href{https://anonymous.4open.science/r/OC-GPU-PP26}{\texttt{https://anonymous.4open.science/r/OC-GPU-PP26}}
+% \href{https://github.com/control-toolbox/OC-GPU-paper}{\texttt{github.com/control-toolbox/OC-GPU-paper}}\\
 
 {\small
 \begin{minted}{julia}
@@ -654,8 +656,8 @@ end
 
 \subsection{GPU detailed configurations and results} \label{sa2}
 All runs performed with \texttt{OptimalControl.jl v1.1.1},
-\texttt{MadNLPMumps v0.5.1} and
-\texttt{MadNLPGPU v0.7.7}.\\
+\texttt{MadNLPMumps.jl v0.5.1} and
+\texttt{MadNLPGPU.jl v0.7.7}.\\
 
 \noindent \textbf{Configuration for the A100 runs}
 
@@ -719,14 +721,8 @@ Toolchain:
 Preferences:
 - CUDA_Runtime_jll.version: 12.9
 
-4 devices:
+1 device:
   0: NVIDIA H100 80GB HBM3
-     (sm_90, 79.175 GiB / 79.647 GiB available)
-  1: NVIDIA H100 80GB HBM3
-     (sm_90, 79.175 GiB / 79.647 GiB available)
-  2: NVIDIA H100 80GB HBM3
-     (sm_90, 79.175 GiB / 79.647 GiB available)
-  3: NVIDIA H100 80GB HBM3
      (sm_90, 79.175 GiB / 79.647 GiB available)
 \end{verbatim}}
 
