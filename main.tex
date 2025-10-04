@@ -1,4 +1,4 @@
-% todo: page limit (= 10); deadline 2/9/2025
+% todo: page limit (= 10); deadline 2/9/2025; also quote JLESC / InfraRED 
 % unicode characters in \begin{minted}{julia} ...
 % https://www.siam.org/conferences-events/siam-conferences/pp26/submissions/ 
 %%%%%%%%%%%%%%%%%%%%%%%%%%  example_doublecolumn.tex  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -69,6 +69,9 @@
 \usepackage{enumitem}
 \usepackage{minted}
 \usepackage{algorithmic}
+\usepackage{booktabs}
+% \usepackage{jlcode}
+
 \ifpdf
   \DeclareGraphicsExtensions{.eps,.pdf,.png,.jpg}
 \else
@@ -103,7 +106,8 @@
 
 % Define a switch for double-blind mode
 \newif\ifblind
-\blindtrue  % set \blindfalse for non-blind mode
+%\blindtrue  % set \blindfalse for non-blind mode
+\blindfalse
 
 % PDF metadata
 \ifblind
@@ -112,7 +116,7 @@
            /Keywords (optimal control, GPU acceleration, sparse automatic differentiation, interior-point methods, Julia, nonlinear programming, domain-specific language)}
 \else
   \pdfinfo{/Author (Alexis Montoison and Jean-Baptiste Caillau)
-           /Title (Modeling and Optimization of Control Problems on GPUs)
+            /Title (Modeling and Optimization of Control Problems on GPUs)
            /Keywords (optimal control, GPU acceleration, sparse automatic differentiation, interior-point methods, Julia, nonlinear programming, domain-specific language)}
 \fi
 
@@ -178,7 +182,7 @@ Unauthorized reproduction of this article is prohibited}}
 \begin{abstract}
     We present a fully Julia-based, GPU-accelerated workflow for solving large-scale sparse nonlinear optimal control problems.
     Continuous-time dynamics are modeled and then discretized via direct transcription with \texttt{OptimalControl.jl} into structured sparse nonlinear programs.
-    These programs are compiled into GPU kernels using \texttt{ExaModels.jl}, leveraging SIMD parallelism for fast evaluation of objectives, gradients, Jacobians and Hessians.
+    These programs are compiled into GPU kernels using \texttt{ExaModels.jl}, leveraging SIMD parallelism for fast evaluation of objectives, constraints, gradients, Jacobians and Hessians.
     The resulting sparse problems are solved entirely on GPU using the interior-point solver \texttt{MadNLP.jl} and the GPU sparse linear solver cuDSS, yielding significant speed-ups over CPU-based approaches.
 \end{abstract}
 
@@ -246,10 +250,7 @@ Second-order methods, such as interior-point solvers, exploit this structure. % 
 Most existing optimal control toolchains target CPU execution.
 For example, CasADi~\cite{Andersson2019} constructs symbolic expressions evaluated just-in-time or exported as C code, typically solved by CPU solvers like IPOPT~\cite{wachter2006implementation} or KNITRO~\cite{byrd2006k}, which rely on CPU linear solvers such as PARDISO~\cite{schenk2004solving}, MUMPS~\cite{amestoy2000mumps}, or HSL~\cite{fowkes2024libhsl}.
 %
-Other frameworks such as ACADO~\cite{houska2011acado} and 
-\texttt{InfiniteOpt.jl}~\cite{pulsipher2022unifying} (that cleverly leverages 
-the modeling power of JuMP~\cite{dunning2017jump}), among others,
-follow the same CPU-centric paradigm.
+Other frameworks, such as ACADO~\cite{houska2011acado} and \texttt{InfiniteOpt.jl}~\cite{pulsipher2022unifying}, which cleverly leverage the modeling power of JuMP~\cite{dunning2017jump}, also follow the same CPU-centric paradigm.
 %
 This CPU focus limits scalability and real-time performance for large or time-critical problems that could benefit from GPU parallelism.
 While some libraries provide GPU-accelerated components, none deliver a fully integrated, GPU-native workflow for nonlinear optimal control.
@@ -340,7 +341,7 @@ Our approach offers several advantages:
 
 \section{From optimal control models to SIMD abstraction}
 To illustrate the transcription from the infinite dimensional setting towards a discretized optimization suited for SIMD parallelism, consider the following elementary optimal control problem with a state function, $x(t)$, valued in $\mathbf{R}^2$, and a scalar control, $u(t)$: minimize the (squared) $L^2$-norm of the control over the fixed time interval $[0,1]$,
-$$ (1/2) \int_0^1 u^2(t)\,\mathrm{d}t \to \min, $$
+$$ \tfrac{1}{2}\int_0^1 u^2(t)\,\mathrm{d}t \to \min, $$
 under the dynamical constraint
 $$ \dot{x}_1(t) = x_2(t),\quad \dot{x}_2(t) = u(t), $$
 and boundary conditions
@@ -543,7 +544,7 @@ The largest problem solved on the H100 has size about $4e6$ with a run time abou
 \section{Discussion}
 Julia's combination of high-level abstractions, metaprogramming, and GPU compiler infrastructure makes it uniquely suited for building performant yet expressive tools for optimal control. 
 Our results show that leveraging parallelism in both model structure and solver internals unlocks substantial speed-ups, enabling new applications in aerospace engineering, quantum control, computational biology, learning, and more. 
-ExaModels.jl is actively being extended to support vector-valued functions, which will enable even more efficient evaluation across large grids.
+% \texttt{ExaModels.jl} is actively being extended to support vector-valued functions, which will enable even more efficient evaluation across large grids.
 The modular GPU stack also ensures portability across future architectures.
 Future extensions include multi-GPU execution and tighter integration with differentiable programming workflows.
 Overall, the synergy between Julia GPU tools and the SIMD structure of direct optimal control yields a powerful solution for solving challenging OCPs at scale.
@@ -553,7 +554,7 @@ Overall, the synergy between Julia GPU tools and the SIMD structure of direct op
 \bibliographystyle{siamplain}
 \bibliography{abbrv,main}
 
-\newpage
+%\newpage
 \appendix 
 
 \section{Supplementary material}
@@ -725,5 +726,109 @@ Preferences:
   0: NVIDIA H100 80GB HBM3
      (sm_90, 79.175 GiB / 79.647 GiB available)
 \end{verbatim}}
+
+% Table 1: Goddard (A100)
+\begin{table}[htbp]
+\centering
+\caption{Goddard problem, A100 run}
+\begin{tabular}{@{}rrr@{}}
+\toprule
+Grid size ($N$) & CPU time (s) & GPU time (s) \\
+\midrule
+100     & 1.46e-2 & 0.158 \\
+200     & 2.93e-2 & 0.174 \\
+500     & 7.16e-2 & 0.186 \\
+750     & 1.02e-1 & 0.202 \\
+1,000   & 1.34e-1 & 0.211 \\
+2,000   & 2.86e-1 & 0.254 \\
+5,000   & 8.61e-1 & 0.489 \\
+7,500   & 1.27    & 0.762 \\
+10,000  & 1.72    & 0.988 \\
+20,000  & 3.59    & 1.54  \\
+50,000  & 1.01e1  & 4.33  \\
+75,000  & 1.59e1  & 6.59  \\
+100,000 & 2.15e1  & 8.75  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% Table 2: Quadrotor (A100)
+\begin{table}[htbp]
+\centering
+\caption{Quadrotor problem, A100 run}
+\begin{tabular}{@{}rrr@{}}
+\toprule
+Grid size ($N$) & CPU time (s) & GPU time (s) \\
+\midrule
+100     & 2.135e-2  & 0.099    \\
+200     & 3.498e-2  & 0.098    \\
+500     & 1.427e-1  & 0.134    \\
+750     & 2.210e-1  & 0.195    \\
+1,000   & 3.023e-1  & 0.200    \\
+2,000   & 6.624e-1  & 0.248    \\
+5,000   & 1.823     & 0.397    \\
+7,500   & 2.804     & 0.595    \\
+10,000  & 3.777     & 0.740    \\
+20,000  & 8.044     & 1.999    \\
+50,000  & 2.223e1   & 3.904    \\
+75,000  & 3.522e1   & 6.173    \\
+100,000 & 4.882e1   & 8.304    \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% Table 3: Goddard (H100)
+\begin{table}[htbp]
+\centering
+\caption{Goddard problem, H100 run}
+\begin{tabular}{@{}rrr@{}}
+\toprule
+Grid size ($N$) & CPU time (s) & GPU time (s) \\
+\midrule
+100     & 7.738e-3  & 0.108    \\
+200     & 1.564e-2  & 0.116    \\
+500     & 3.924e-2  & 0.148    \\
+750     & 5.826e-2  & 0.142    \\
+1,000   & 7.619e-2  & 0.161    \\
+2,000   & 1.687e-1  & 0.207   \\
+5,000   & 4.433e-1  & 0.382   \\
+7,500   & 6.548e-1  & 0.549   \\
+10,000  & 9.205e-1  & 0.723   \\
+20,000  & 2.004     & 1.118   \\
+50,000  & 5.884     & 3.915   \\
+75,000  & 9.390     & 5.262   \\
+100,000 & 1.258e1   & 7.065   \\
+150,000 & 8.293e1   & 11.069  \\
+200,000 & 3.556e1   & 15.575  \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+% Table 4: Quadrotor (H100)
+\begin{table}[htbp]
+\centering
+\caption{Quadrotor problem, H100 run}
+\begin{tabular}{@{}rrr@{}}
+\toprule
+Grid size ($N$) & CPU time (s) & GPU time (s) \\
+\midrule
+100     & 1.141e-2  & 0.058    \\
+200     & 1.790e-2  & 0.063    \\
+500     & 9.748e-2  & 0.099    \\
+750     & 1.488e-1  & 0.117    \\
+1,000   & 2.034e-1  & 0.132    \\
+2,000   & 4.350e-1  & 0.199    \\
+5,000   & 1.174     & 0.320    \\
+7,500   & 1.842     & 0.443    \\
+10,000  & 2.516     & 0.597    \\
+20,000  & 5.420     & 1.171    \\
+50,000  & 1.453e1   & 2.983    \\
+75,000  & 2.311e1   & 4.728    \\
+100,000 & 3.267e1   & 6.396    \\
+150,000 & 4.986e1   & 9.873    \\
+200,000 & 6.546e1   & 13.413   \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 \end{document}
