@@ -1,0 +1,261 @@
+\documentclass[11pt]{article}
+
+\usepackage{microtype}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath,amssymb}
+\usepackage{mathtools,bbm}
+\usepackage[hidelinks]{hyperref}
+\usepackage[svgnames]{xcolor}
+\usepackage{enumitem}
+\usepackage[margin=1.2in]{geometry}
+\usepackage{mdframed}
+
+\usepackage[numbers,sort&compress]{natbib}
+% \bibhang only works for author-year style
+% this patch sets the indent after the first line to \bibindent in number style
+\setlength{\bibindent}{0pt}
+\makeatletter
+\renewcommand\NAT@bibsetnum[1]{\settowidth\labelwidth{\@biblabel{#1}}%
+   \setlength{\leftmargin}{\bibindent}\addtolength{\leftmargin}{\dimexpr\labelwidth+\labelsep\relax}%
+   \setlength{\itemindent}{-\bibindent}%
+   \setlength{\listparindent}{\itemindent}%
+   \setlength{\itemsep}{\bibsep}\setlength{\parsep}{\z@}%
+   \ifNAT@openbib%
+     \addtolength{\leftmargin}{\bibindent}%
+     \setlength{\itemindent}{-\bibindent}%
+     \setlength{\listparindent}{\itemindent}%
+     \setlength{\parsep}{0pt}%
+   \fi
+}
+\makeatother
+ 
+% patch natbib to hyperlink author names when using the number style
+% https://tex.stackexchange.com/questions/76067/how-to-hyperlink-name-part-in-citet-using-natbib-numerical-and-hyperref
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\NAT@test}{\else \NAT@nm}{\else \NAT@hyper@{\NAT@nm}}{}{}
+\makeatother
+\newcommand*{\doi}[1]{DOI: \href{http://dx.doi.org/\detokenize{#1}}{\detokenize{#1}}}
+\newcommand*{\doilink}[2]{\href{http://dx.doi.org/\detokenize{#1}}{#2}}
+
+\newmdenv[
+  linecolor=black,
+  topline=false, bottomline=false, rightline=true,
+  linewidth=2pt,
+  backgroundcolor=gray!10!white
+]{answer}
+
+\usepackage[textwidth=.95\marginparwidth,
+  backgroundcolor=lightgray,
+  linecolor=orange,
+  textsize=scriptsize]{todonotes}
+  
+\makeatletter
+\@mparswitchfalse  % Place todo notes in wide margin.
+\def\listtodoname{Todo List}
+\def\listoftodos{%
+  \section*{\listtodoname}\mbox{~}\par
+  \@starttoc{tdo}
+  }
+\makeatother
+
+\newcommand{\bmat}[1]{\begin{bmatrix} #1 \end{bmatrix}}
+\newcommand{\blkdiag}{\mathop{\text{blkdiag}}}
+\newcommand{\cit}[1]{``#1''}
+\newcommand{\smarttodo}[2][]{%
+  \todo[caption={\protect\hypertarget{todo}{} #2}, #1]{\hyperlink{todo}{#2}
+}}
+
+\usepackage{xspace}
+
+\begin{document}
+\vspace*{-45pt}
+\begin{center} \Large Modeling and Optimization of Control Problems on GPUs
+\\[6pt] \large Alexis Montoison, Jean-Baptiste Caillau
+\\[6pt] \today
+\\[12pt]\Large \bf Response to reviewers
+\end{center}
+
+\noindent We thank the reviewers for their careful reading of our manuscript and their insightful and constructive comments.
+We followed almost all suggestions.
+%Our responses are summarized below.
+
+\section*{Reviewer 1 comments}
+
+\subsection*{Reasons to Accept and Areas of Improvement}
+
+\begin{itemize}
+  \item Interest of frameworks (in the sense of toolchains or workflows) to accelerate the solution of control problems on GPUs.
+  \item Demonstration of benefits of exploiting GPUs.
+  \item Interest of promoting Julia as an alternative scientific programming language.
+  \item Very little details on the framework itself. Description of the components, but these are published elsewhere and are not a contribution of the work.
+  \item No comparison with related work.
+\end{itemize}
+
+\subsection*{Detailed feedback for the authors}
+
+\begin{itemize}
+  \item The paper lacks details on how the various components of the workflow are integrated. The description primarily refers to previously published components, which cannot be considered original contributions of this work. Simply combining these existing elements does not constitute a substantial scientific contribution; rather, it represents an engineering effort.
+  \item The experimental evaluation is weak. No comparison is made with other alternatives. The authors simply execute their codes on CPU and GPU and compare the execution times.
+\end{itemize}
+
+\subsection*{Questions for Rebuttal}
+
+\begin{itemize}
+  \item What is the scientific contribution of your work?
+  \item What is the novelty of this work?
+\end{itemize}
+
+\begin{answer}
+  \begin{enumerate}
+      \item ...
+  \end{enumerate}
+\end{answer}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section*{Reviewer 2 comments}
+
+\subsection*{Reasons to Accept and Areas of Improvement}
+
+The paper addresses an important unmet need by introducing a GPU-first solution for nonlinear optimal control problems.
+This integrated approach is interesting and closes a clear gap in current tools.
+The proposed GPU pipeline achieves notable speed-ups on large-scale benchmarks – e.g. about 2× faster on a complex rocket control problem, and up to 5× faster on a quadrotor problem, once the problem size is sufficiently large.
+For the evaluation part, authors compare GPU vs. CPU performance across varying problem sizes, showing where GPU acceleration pays off and confirming that the GPU solver converges to the same solutions with a similar number of iterations as the CPU solver.
+Building on Julia DSLs and automatic code generation, it is a good combination of software and HPC, making advanced GPU optimization accessible to domain specialists.
+The framework has practical value for scientists and engineers who need high-level modeling capability with GPU performance.
+The use of Julia’s DSL makes the system accessible without requiring low-level CUDA programming.
+
+The core contribution is an engineering effort rather than a fundamentally new algorithm.
+The paper builds on existing methods (direct transcription, interior-point solving) and known Julia packages.
+The solution currently relies on NVIDIA-specific technologies (CUDA and cuDSS).
+As the authors note, the sparse linear solver is CUDA-specific, meaning the approach cannot yet run on AMD or other GPU platforms.
+This limits portability and adoption in heterogeneous environments.
+It would enhance the work to at least discuss plans for supporting alternative backends or demonstrate that the framework is designed to accommodate other GPUs when corresponding libraries become available.
+(The paper does mention the design is amenable to future backends and even multi-GPU extensions, which is good, but currently the scope is restricted to NVIDIA GPUs.)
+Additionally, the authors could elaborate slightly more on implementation details such as JIT compilation overhead or memory usage, to preempt questions about the practicality of the approach in different settings.
+
+\subsection*{Detailed feedback for the authors}
+
+The experiments are thorough and show tangible performance gains (2×–5×) for large-scale control problems.
+The performance evaluation is systematic, and the authors correctly highlight where GPU acceleration becomes beneficial (larger-scale problems).
+The framework has practical value for scientists and engineers who need high-level modeling capability with GPU performance.
+The use of Julia’s DSL makes the system accessible without requiring low-level CUDA programming.
+
+Consider clarifying why existing GPU acceleration approaches (e.g., GPU kernels in CasADi or TensorFlow-based differentiable control) are insufficient or fundamentally different.
+This will better justify the uniqueness of your work.
+It would also help to explain why performance gains appear only after a certain problem size threshold, perhaps through a scaling analysis or profiling insight.
+Since the current implementation depends on NVIDIA’s CUDA stack and cuDSS, it would strengthen the paper to discuss how this design could be extended to other GPU platforms (AMD ROCm, Intel GPU, etc.).
+
+\subsection*{Questions for Rebuttal}
+
+Please see detailed feedback.
+
+\begin{answer}
+  \begin{enumerate}
+      \item ...
+  \end{enumerate}
+\end{answer}
+
+\section*{Reviewer 3 comments}
+
+\subsection*{Reasons to Accept and Areas of Improvement}
+
+\begin{itemize}
+  \item This paper introduces a Julia module for optimal control problems on GPU with performance portability.
+  \item Insufficient performance analysis.
+  \item Insufficient evaluation to claim the conclusion.
+\end{itemize}
+
+\subsection*{Detailed feedback for the authors}
+
+\begin{itemize}
+  \item Detailed performance analysis is not presented. For example, what is the theoretical performance bottleneck (e.g. memory bandwidth or compute) in this problem? And, how much efficiency does this Julia tool achieve?
+  \item The authors mentioned in the "8. Discussion" section as "Julia's combination ... performant yet expressive tools for optimal control"; however, they didn't demonstrate how much performance we can achieve in other tools or programming models/languages. In other words, I couldn't understand how performance-efficient.
+\end{itemize}
+
+\subsection*{Questions for Rebuttal}
+
+I believe that an effective rebuttal would not be able to address the fundamental limitations of this work.
+
+\begin{answer}
+  \begin{enumerate}
+      \item ...
+  \end{enumerate}
+\end{answer}
+
+\section*{Reviewer 4 comments}
+
+\subsection*{Reasons to Accept and Areas of Improvement}
+
+\begin{itemize}
+  \item Open source, well-thought-out, and documented Julia libraries made to be shared and used by the community.
+  \item Leveraging HPC throughput with easy-to-use Julia syntax.
+  \item Convincing performance analysis on the latest HPC NVIDIA GPUs.
+  \item Pedagogical and informative article.
+  \item The extent of the software contributions associated with this article is not stated clearly.
+  \item Additional comments on the performance analysis are needed.
+\end{itemize}
+
+\subsection*{Detailed feedback for the authors}
+
+In "Modeling and Optimization of Control Problems on GPUs", the authors present an easy-to-use software stack for the efficient solution of optimal control problems on GPUs. The first part of the article describes the different components of their toolchain, and explains in a tutorial fashion how this toolchain can be used. The second part of this article concerns the use of their software to solve two optimal control problems (of increasing sizes) on NVIDIA A100 and H100 GPUs.
+
+Overall, I enjoyed reading the article. It is setting a nice milestone for a set of work spanning different Julia libraries, and that comes together in an efficient and easy-to-use framework for the benefit of the community. For this reason, I think this article will interest the public of the SIAM PP conference, and I recommend it for publication. I have, however, a set of queries and remarks that I would like the authors to address.
+Various queries and remarks:
+
+I am not sure to understand the contribution claim "Our work fills this gap with a GPU-first toolchain that unifies modeling, differentiation, and solver execution" in section 2. It can sound like "all the associated software of the toolchain are contributions of this article"? Maybe the authors can clarify which software developments and efforts are specific contributions of this article.
+I did not find the model and spec of the CPU used for the experiments in the article. Can you add it?
+Can you clarify which floating-point arithmetic you use to perform the experiments?
+Can you comment on why H100 needs more iterations than the A100 to beat CPU time? Also, can you explain why we do not see a significant performance improvement when using H100 over A100?
+Why did you pick the direct solver CuDSS over a GPU-capable iterative solver (e.g., Krylov.jl)? Is it simply for convenience, or are there mathematical/numerical reasons pushing for this choice?
+I found the Figures hard to read and not very convenient for comparing the runs and the hardware. For instance, in Fig. 7.4, it is difficult to even read the runtime's order of magnitude. The gray grids in the plots' backgrounds are too light and won't print well. I realize afterward that Tables with the detailed execution time are available in the appendix. But they are not advertised in the main text of the article and are hard to find. I think that using a big Table spanning the two columns of the article instead of the current plots would be preferable for instance.
+
+\subsection*{Questions for Rebuttal}
+
+Nothing
+
+\begin{answer}
+  \begin{enumerate}
+      \item ...
+  \end{enumerate}
+\end{answer}
+
+\section*{Reviewer 5 comments}
+
+\subsection*{Reasons to Accept and Areas of Improvement}
+
+This paper presents a GPU-accelerated, Julia-based workflow for solving large-scale sparse nonlinear optimal control problems (OCPs).
+While the work demonstrates solid engineering and effective implementation, it offers limited novelty from a research perspective, despite the value of parallelizing optimal control problems on GPUs.
+
+\subsection*{Detailed feedback for the authors}
+
+\begin{itemize}
+  \item Provide more details about the algorithm, particularly which components can be parallelized and which cannot.
+  \item Include additional experiments on different GPUs, such as an analysis of the time consumption across various stages of the algorithm.
+\end{itemize}
+
+\subsection*{Questions for Rebuttal}
+
+What is the time breakdown across the different stages of the algorithm?
+
+\begin{answer}
+  \begin{enumerate}
+      \item ...
+  \end{enumerate}
+\end{answer}
+
+\section*{Other changes}
+
+% We made other changes to the manuscript while it was in review.
+
+% \begin{enumerate}[label={\color{black}O.\arabic*}]
+%   \item ...
+% \end{enumerate}
+
+A \LaTeX\ diff file shows red text that has been replaced by blue text.
+
+\bibliographystyle{abbrvnat}
+\bibliography{abbrv,main}
+
+\end{document}
