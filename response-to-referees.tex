@@ -71,52 +71,52 @@
 \begin{document}
 \vspace*{-45pt}
 \begin{center} \Large Modeling and Optimization of Control Problems on GPUs
-\\[6pt] \large Alexis Montoison, Jean-Baptiste Caillau
-\\[6pt] \today
+% \\[6pt] \large Alexis Montoison, Jean-Baptiste Caillau
+% \\[6pt] \today
 \\[12pt]\Large \bf Response to reviewers
 \end{center}
 
 \noindent We thank the reviewers for their careful reading of our manuscript and their insightful and constructive comments.
-We followed almost all suggestions.
-%Our responses are summarized below.
+% We followed almost all suggestions.
+Our responses are summarized below.
 
 \section*{Reviewer 1 comments}
 
-\subsection*{Reasons to Accept and Areas of Improvement}
+\subsection*{(i) -- Reasons to Accept and Areas of Improvement}
 
-\begin{itemize}
+\begin{enumerate}[label=(\alph*)]
   \item Interest of frameworks (in the sense of toolchains or workflows) to accelerate the solution of control problems on GPUs.
   \item Demonstration of benefits of exploiting GPUs.
   \item Interest of promoting Julia as an alternative scientific programming language.
   \item Very little details on the framework itself. Description of the components, but these are published elsewhere and are not a contribution of the work.
   \item No comparison with related work.
-\end{itemize}
+\end{enumerate}
 
-\subsection*{Detailed feedback for the authors}
+\subsection*{(ii) -- Detailed feedback for the authors}
 
-\begin{itemize}
+\begin{enumerate}[label=(\alph*)]
   \item The paper lacks details on how the various components of the workflow are integrated. The description primarily refers to previously published components, which cannot be considered original contributions of this work. Simply combining these existing elements does not constitute a substantial scientific contribution; rather, it represents an engineering effort.
   \item The experimental evaluation is weak. No comparison is made with other alternatives. The authors simply execute their codes on CPU and GPU and compare the execution times.
-\end{itemize}
+\end{enumerate}
 
-\subsection*{Questions for Rebuttal}
+\subsection*{(iii) -- Questions for Rebuttal}
 
-\begin{itemize}
+\begin{enumerate}[label=(\alph*)]
   \item What is the scientific contribution of your work?
   \item What is the novelty of this work?
-\end{itemize}
+\end{enumerate}
 
 \begin{answer}
-  \begin{enumerate}
+  \begin{itemize}
       \item ...
-  \end{enumerate}
+  \end{itemize}
 \end{answer}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section*{Reviewer 2 comments}
 
-\subsection*{Reasons to Accept and Areas of Improvement}
+\subsection*{(i) -- Reasons to Accept and Areas of Improvement}
 
 The paper addresses an important unmet need by introducing a GPU-first solution for nonlinear optimal control problems.
 This integrated approach is interesting and closes a clear gap in current tools.
@@ -135,7 +135,7 @@ It would enhance the work to at least discuss plans for supporting alternative b
 (The paper does mention the design is amenable to future backends and even multi-GPU extensions, which is good, but currently the scope is restricted to NVIDIA GPUs.)
 Additionally, the authors could elaborate slightly more on implementation details such as JIT compilation overhead or memory usage, to preempt questions about the practicality of the approach in different settings.
 
-\subsection*{Detailed feedback for the authors}
+\subsection*{(ii) -- Detailed feedback for the authors}
 
 The experiments are thorough and show tangible performance gains (2×–5×) for large-scale control problems.
 The performance evaluation is systematic, and the authors correctly highlight where GPU acceleration becomes beneficial (larger-scale problems).
@@ -147,57 +147,63 @@ This will better justify the uniqueness of your work.
 It would also help to explain why performance gains appear only after a certain problem size threshold, perhaps through a scaling analysis or profiling insight.
 Since the current implementation depends on NVIDIA’s CUDA stack and cuDSS, it would strengthen the paper to discuss how this design could be extended to other GPU platforms (AMD ROCm, Intel GPU, etc.).
 
-\subsection*{Questions for Rebuttal}
+\subsection*{(iii) -- Questions for Rebuttal}
 
 Please see detailed feedback.
 
 \begin{answer}
-  \begin{enumerate}
-      \item ...
-  \end{enumerate}
+  \begin{itemize}
+    \item We added sentences describing GPU backend support in our framework. We have officially added support for AMD GPUs: sparse linear systems are simply converted to dense ones and solved with rocSOLVER.
+    We are currently working on similar support for Intel GPUs.
+    \item Regarding JIT compilation, we added a precompilation setup in the optimization package \texttt{MadNLP.jl}, which should remove the JIT overhead.
+    This precompilation workflow has not yet been integrated into \texttt{OptimalControl.jl}.
+    We added sentences in the paper to clarify this difference compared to compiled-code execution.
+    \item The memory usage is quite similar to what can be achieved in low-level languages such as C or Fortran, since Julia provides fine-grained control over memory reuse and allocation. However, the main overhead comes from the garbage collector, which we do not force for performance reasons, but which can put pressure on the GPU.
+    A sentence describing these points was added to the paper.
+  \end{itemize}
 \end{answer}
 
 \section*{Reviewer 3 comments}
 
-\subsection*{Reasons to Accept and Areas of Improvement}
+\subsection*{(i) -- Reasons to Accept and Areas of Improvement}
 
-\begin{itemize}
+\begin{enumerate}[label=(\alph*)]
   \item This paper introduces a Julia module for optimal control problems on GPU with performance portability.
   \item Insufficient performance analysis.
   \item Insufficient evaluation to claim the conclusion.
-\end{itemize}
+\end{enumerate}
 
-\subsection*{Detailed feedback for the authors}
+\subsection*{(ii) -- Detailed feedback for the authors}
 
-\begin{itemize}
+\begin{enumerate}[label=(\alph*)]
   \item Detailed performance analysis is not presented. For example, what is the theoretical performance bottleneck (e.g. memory bandwidth or compute) in this problem? And, how much efficiency does this Julia tool achieve?
   \item The authors mentioned in the "8. Discussion" section as "Julia's combination ... performant yet expressive tools for optimal control"; however, they didn't demonstrate how much performance we can achieve in other tools or programming models/languages. In other words, I couldn't understand how performance-efficient.
-\end{itemize}
+\end{enumerate}
 
-\subsection*{Questions for Rebuttal}
+\subsection*{(iii) -- Questions for Rebuttal}
 
 I believe that an effective rebuttal would not be able to address the fundamental limitations of this work.
 
 \begin{answer}
-  \begin{enumerate}
-      \item ...
-  \end{enumerate}
+  \begin{itemize}
+    \item We plan to add a few additional problems from \texttt{OptimalControlProblems.jl} \citep{OptimalControlProblems_jl} and provide a breakdown of the time spent in each stage of our workflow (model assembly, differentiation, linear algebra, other operations in the optimization solver) to support our performance analysis and strengthen the results presented in our conclusions.
+  \end{itemize}
 \end{answer}
 
 \section*{Reviewer 4 comments}
 
-\subsection*{Reasons to Accept and Areas of Improvement}
+\subsection*{(i) -- Reasons to Accept and Areas of Improvement}
 
-\begin{itemize}
+\begin{enumerate}[label=(\alph*)]
   \item Open source, well-thought-out, and documented Julia libraries made to be shared and used by the community.
   \item Leveraging HPC throughput with easy-to-use Julia syntax.
   \item Convincing performance analysis on the latest HPC NVIDIA GPUs.
   \item Pedagogical and informative article.
   \item The extent of the software contributions associated with this article is not stated clearly.
   \item Additional comments on the performance analysis are needed.
-\end{itemize}
+\end{enumerate}
 
-\subsection*{Detailed feedback for the authors}
+\subsection*{(ii) -- Detailed feedback for the authors}
 
 In "Modeling and Optimization of Control Problems on GPUs", the authors present an easy-to-use software stack for the efficient solution of optimal control problems on GPUs. The first part of the article describes the different components of their toolchain, and explains in a tutorial fashion how this toolchain can be used. The second part of this article concerns the use of their software to solve two optimal control problems (of increasing sizes) on NVIDIA A100 and H100 GPUs.
 
@@ -211,51 +217,64 @@ Can you comment on why H100 needs more iterations than the A100 to beat CPU time
 Why did you pick the direct solver CuDSS over a GPU-capable iterative solver (e.g., Krylov.jl)? Is it simply for convenience, or are there mathematical/numerical reasons pushing for this choice?
 I found the Figures hard to read and not very convenient for comparing the runs and the hardware. For instance, in Fig. 7.4, it is difficult to even read the runtime's order of magnitude. The gray grids in the plots' backgrounds are too light and won't print well. I realize afterward that Tables with the detailed execution time are available in the appendix. But they are not advertised in the main text of the article and are hard to find. I think that using a big Table spanning the two columns of the article instead of the current plots would be preferable for instance.
 
-\subsection*{Questions for Rebuttal}
+\subsection*{(iii) -- Questions for Rebuttal}
 
 Nothing
 
 \begin{answer}
-  \begin{enumerate}
-      \item ...
-  \end{enumerate}
+  \begin{itemize}
+    \item We plan to add a few additional problems from \texttt{OptimalControlProblems.jl} \citep{OptimalControlProblems_jl} to have five problems in total, providing more results to support our comments on performance analysis. 
+    \item We added the CPU model used for the numerical results.
+    \item The cluster with H100 has a slower CPU than the one with A100.
+    This difference is not related to the GPU model.
+    \item We do not observe a significant improvement when using H100 over A100 because, in the nonlinear optimization solver, most of the computational work is spent solving the sparse KKT systems.
+    The main bottleneck for speed-up is memory communication rather than computation itself. In detail, the comparison depends more on the memory architecture of the GPUs than on raw FLOPS or computational speed.
+    \item We use a direct solver instead of Krylov solvers because the optimization solver implemented in \texttt{MadNLP.jl} \citep{shin2024accelerating,shin2021graph} is a primal-dual interior point method. The KKT systems are known to be very hard to solve with Krylov methods due to the clustering of eigenvalues, which is caused by some terms in the KKT systems that approach zero or infinity. Furthermore, we currently lack a robust, problem-independent preconditioner.  
+    Note that we have developed a hybrid KKT solver in \texttt{HybridKKT.jl} \citep{pacaud2024condensed}, which combines conjugate gradient with Cholesky from cuDSS to solve generic optimization problems, but a direct solver is still required for robustness.  
+    The only approach where we fully rely on Krylov solvers on GPU is in \texttt{CompressedSensingIPM.jl} \citep{wei-montoison-rao-pacaud-anitescu-2025}, where we have a dedicated preconditioner and cannot materialize the KKT systems because they are based on FFT operators and represented as dense Vandermonde matrices.
+    We added sentences to explain that Krylov solvers are not used in this particular context. However, for other projects, \texttt{Krylov.jl} \citep{montoison-orban-2023} is used with \texttt{MadNLP.jl} to solve optimization problems on NVIDIA and AMD GPUs.
+  \end{itemize}
 \end{answer}
 
 \section*{Reviewer 5 comments}
 
-\subsection*{Reasons to Accept and Areas of Improvement}
+\subsection*{(i) -- Reasons to Accept and Areas of Improvement}
 
 This paper presents a GPU-accelerated, Julia-based workflow for solving large-scale sparse nonlinear optimal control problems (OCPs).
 While the work demonstrates solid engineering and effective implementation, it offers limited novelty from a research perspective, despite the value of parallelizing optimal control problems on GPUs.
 
-\subsection*{Detailed feedback for the authors}
+\subsection*{(ii) -- Detailed feedback for the authors}
 
-\begin{itemize}
+\begin{enumerate}[label=(\alph*)]
   \item Provide more details about the algorithm, particularly which components can be parallelized and which cannot.
   \item Include additional experiments on different GPUs, such as an analysis of the time consumption across various stages of the algorithm.
-\end{itemize}
+\end{enumerate}
 
-\subsection*{Questions for Rebuttal}
+\subsection*{(iii) -- Questions for Rebuttal}
 
 What is the time breakdown across the different stages of the algorithm?
 
 \begin{answer}
-  \begin{enumerate}
-      \item ...
-  \end{enumerate}
+  \begin{itemize}
+      \item We added a table in the numerical experiments section to show the time consumption across the four stages of the algorithm for our test problems.
+  \end{itemize}
 \end{answer}
 
 \section*{Other changes}
 
-% We made other changes to the manuscript while it was in review.
+We made other changes to the manuscript while it was in review.
 
-% \begin{enumerate}[label={\color{black}O.\arabic*}]
-%   \item ...
-% \end{enumerate}
+\begin{answer}
+  \begin{itemize}
+    \item Added references to our newly supported optimization solvers: \texttt{UnoSolver.jl} \citep{VanaretLeyffer2024}, \texttt{MadNCL.jl} \citep{MadNCL}, and \texttt{MadIPM.jl} \citep{montoison-2025}, and used them as examples of the modularity in our workflow.
+    \item Outlined upcoming work and research questions arising from the connection between these packages, such as solving batch optimization problems with varying initial conditions in optimal control problems.
+  \end{itemize}
+\end{answer}
 
-A \LaTeX\ diff file shows red text that has been replaced by blue text.
+A PDF diff file generated with \LaTeX, showing replaced text in red and new text in blue, is also provided.
 
 \bibliographystyle{abbrvnat}
+\small
 \bibliography{abbrv,main}
 
 \end{document}
