@@ -106,6 +106,8 @@ Our responses are summarized below.
   \item What is the novelty of this work?
 \end{enumerate}
 
+\subsection*{(iv) -- Response of the authors}
+
 \begin{answer}
   \begin{itemize}
       \item ...
@@ -118,38 +120,42 @@ Our responses are summarized below.
 
 \subsection*{(i) -- Reasons to Accept and Areas of Improvement}
 
-The paper addresses an important unmet need by introducing a GPU-first solution for nonlinear optimal control problems.
-This integrated approach is interesting and closes a clear gap in current tools.
-The proposed GPU pipeline achieves notable speed-ups on large-scale benchmarks – e.g. about 2× faster on a complex rocket control problem, and up to 5× faster on a quadrotor problem, once the problem size is sufficiently large.
-For the evaluation part, authors compare GPU vs. CPU performance across varying problem sizes, showing where GPU acceleration pays off and confirming that the GPU solver converges to the same solutions with a similar number of iterations as the CPU solver.
-Building on Julia DSLs and automatic code generation, it is a good combination of software and HPC, making advanced GPU optimization accessible to domain specialists.
-The framework has practical value for scientists and engineers who need high-level modeling capability with GPU performance.
-The use of Julia’s DSL makes the system accessible without requiring low-level CUDA programming.
-
-The core contribution is an engineering effort rather than a fundamentally new algorithm.
-The paper builds on existing methods (direct transcription, interior-point solving) and known Julia packages.
-The solution currently relies on NVIDIA-specific technologies (CUDA and cuDSS).
-As the authors note, the sparse linear solver is CUDA-specific, meaning the approach cannot yet run on AMD or other GPU platforms.
-This limits portability and adoption in heterogeneous environments.
-It would enhance the work to at least discuss plans for supporting alternative backends or demonstrate that the framework is designed to accommodate other GPUs when corresponding libraries become available.
-(The paper does mention the design is amenable to future backends and even multi-GPU extensions, which is good, but currently the scope is restricted to NVIDIA GPUs.)
-Additionally, the authors could elaborate slightly more on implementation details such as JIT compilation overhead or memory usage, to preempt questions about the practicality of the approach in different settings.
+\begin{enumerate}[label=(\alph*)]
+  \item The paper addresses an important unmet need by introducing a GPU-first solution for nonlinear optimal control problems.
+  This integrated approach is interesting and closes a clear gap in current tools.
+  The proposed GPU pipeline achieves notable speed-ups on large-scale benchmarks -- e.g. about 2× faster on a complex rocket control problem, and up to 5× faster on a quadrotor problem, once the problem size is sufficiently large.
+  For the evaluation part, authors compare GPU vs. CPU performance across varying problem sizes, showing where GPU acceleration pays off and confirming that the GPU solver converges to the same solutions with a similar number of iterations as the CPU solver.
+  Building on Julia DSLs and automatic code generation, it is a good combination of software and HPC, making advanced GPU optimization accessible to domain specialists.
+  The framework has practical value for scientists and engineers who need high-level modeling capability with GPU performance.
+  The use of Julia's DSL makes the system accessible without requiring low-level CUDA programming.
+  \item The core contribution is an engineering effort rather than a fundamentally new algorithm.
+  The paper builds on existing methods (direct transcription, interior-point solving) and known Julia packages.
+  The solution currently relies on NVIDIA-specific technologies (CUDA and cuDSS).
+  As the authors note, the sparse linear solver is CUDA-specific, meaning the approach cannot yet run on AMD or other GPU platforms.
+  This limits portability and adoption in heterogeneous environments.
+  It would enhance the work to at least discuss plans for supporting alternative backends or demonstrate that the framework is designed to accommodate other GPUs when corresponding libraries become available.
+  (The paper does mention the design is amenable to future backends and even multi-GPU extensions, which is good, but currently the scope is restricted to NVIDIA GPUs.)
+  Additionally, the authors could elaborate slightly more on implementation details such as JIT compilation overhead or memory usage, to preempt questions about the practicality of the approach in different settings.
+\end{enumerate}
 
 \subsection*{(ii) -- Detailed feedback for the authors}
 
-The experiments are thorough and show tangible performance gains (2×–5×) for large-scale control problems.
-The performance evaluation is systematic, and the authors correctly highlight where GPU acceleration becomes beneficial (larger-scale problems).
-The framework has practical value for scientists and engineers who need high-level modeling capability with GPU performance.
-The use of Julia’s DSL makes the system accessible without requiring low-level CUDA programming.
-
-Consider clarifying why existing GPU acceleration approaches (e.g., GPU kernels in CasADi or TensorFlow-based differentiable control) are insufficient or fundamentally different.
-This will better justify the uniqueness of your work.
-It would also help to explain why performance gains appear only after a certain problem size threshold, perhaps through a scaling analysis or profiling insight.
-Since the current implementation depends on NVIDIA’s CUDA stack and cuDSS, it would strengthen the paper to discuss how this design could be extended to other GPU platforms (AMD ROCm, Intel GPU, etc.).
+\begin{enumerate}[label=(\alph*)]
+  \item The experiments are thorough and show tangible performance gains (2×--5×) for large-scale control problems.
+  The performance evaluation is systematic, and the authors correctly highlight where GPU acceleration becomes beneficial (larger-scale problems).
+  The framework has practical value for scientists and engineers who need high-level modeling capability with GPU performance.
+  The use of Julia's DSL makes the system accessible without requiring low-level CUDA programming.
+  \item Consider clarifying why existing GPU acceleration approaches (e.g., GPU kernels in CasADi or TensorFlow-based differentiable control) are insufficient or fundamentally different.
+  This will better justify the uniqueness of your work.
+  It would also help to explain why performance gains appear only after a certain problem size threshold, perhaps through a scaling analysis or profiling insight.
+  Since the current implementation depends on NVIDIA's CUDA stack and cuDSS, it would strengthen the paper to discuss how this design could be extended to other GPU platforms (AMD ROCm, Intel GPU, etc.).
+\end{enumerate}
 
 \subsection*{(iii) -- Questions for Rebuttal}
 
 Please see detailed feedback.
+
+\subsection*{(iv) -- Response of the authors}
 
 \begin{answer}
   \begin{itemize}
@@ -176,13 +182,17 @@ Please see detailed feedback.
 \subsection*{(ii) -- Detailed feedback for the authors}
 
 \begin{enumerate}[label=(\alph*)]
-  \item Detailed performance analysis is not presented. For example, what is the theoretical performance bottleneck (e.g. memory bandwidth or compute) in this problem? And, how much efficiency does this Julia tool achieve?
-  \item The authors mentioned in the "8. Discussion" section as "Julia's combination ... performant yet expressive tools for optimal control"; however, they didn't demonstrate how much performance we can achieve in other tools or programming models/languages. In other words, I couldn't understand how performance-efficient.
+  \item Detailed performance analysis is not presented. For example, what is the theoretical performance bottleneck (e.g. memory bandwidth or compute) in this problem?
+  And, how much efficiency does this Julia tool achieve?
+  \item The authors mentioned in the "8. Discussion" section as "Julia's combination ... performant yet expressive tools for optimal control"; however, they didn't demonstrate how much performance we can achieve in other tools or programming models/languages.
+  In other words, I couldn't understand how performance-efficient.
 \end{enumerate}
 
 \subsection*{(iii) -- Questions for Rebuttal}
 
 I believe that an effective rebuttal would not be able to address the fundamental limitations of this work.
+
+\subsection*{(iv) -- Response of the authors}
 
 \begin{answer}
   \begin{itemize}
@@ -205,21 +215,39 @@ I believe that an effective rebuttal would not be able to address the fundamenta
 
 \subsection*{(ii) -- Detailed feedback for the authors}
 
-In "Modeling and Optimization of Control Problems on GPUs", the authors present an easy-to-use software stack for the efficient solution of optimal control problems on GPUs. The first part of the article describes the different components of their toolchain, and explains in a tutorial fashion how this toolchain can be used. The second part of this article concerns the use of their software to solve two optimal control problems (of increasing sizes) on NVIDIA A100 and H100 GPUs.
+\subsubsection*{General comment}
 
-Overall, I enjoyed reading the article. It is setting a nice milestone for a set of work spanning different Julia libraries, and that comes together in an efficient and easy-to-use framework for the benefit of the community. For this reason, I think this article will interest the public of the SIAM PP conference, and I recommend it for publication. I have, however, a set of queries and remarks that I would like the authors to address.
-Various queries and remarks:
+In "Modeling and Optimization of Control Problems on GPUs", the authors present an easy-to-use software stack for the efficient solution of optimal control problems on GPUs.
+The first part of the article describes the different components of their toolchain, and explains in a tutorial fashion how this toolchain can be used. The second part of this article concerns the use of their software to solve two optimal control problems (of increasing sizes) on NVIDIA A100 and H100 GPUs.
 
-I am not sure to understand the contribution claim "Our work fills this gap with a GPU-first toolchain that unifies modeling, differentiation, and solver execution" in section 2. It can sound like "all the associated software of the toolchain are contributions of this article"? Maybe the authors can clarify which software developments and efforts are specific contributions of this article.
-I did not find the model and spec of the CPU used for the experiments in the article. Can you add it?
-Can you clarify which floating-point arithmetic you use to perform the experiments?
-Can you comment on why H100 needs more iterations than the A100 to beat CPU time? Also, can you explain why we do not see a significant performance improvement when using H100 over A100?
-Why did you pick the direct solver CuDSS over a GPU-capable iterative solver (e.g., Krylov.jl)? Is it simply for convenience, or are there mathematical/numerical reasons pushing for this choice?
-I found the Figures hard to read and not very convenient for comparing the runs and the hardware. For instance, in Fig. 7.4, it is difficult to even read the runtime's order of magnitude. The gray grids in the plots' backgrounds are too light and won't print well. I realize afterward that Tables with the detailed execution time are available in the appendix. But they are not advertised in the main text of the article and are hard to find. I think that using a big Table spanning the two columns of the article instead of the current plots would be preferable for instance.
+Overall, I enjoyed reading the article.
+It is setting a nice milestone for a set of work spanning different Julia libraries, and that comes together in an efficient and easy-to-use framework for the benefit of the community.
+For this reason, I think this article will interest the public of the SIAM PP conference, and I recommend it for publication.
+I have, however, a set of queries and remarks that I would like the authors to address.
+
+\subsubsection*{Various queries and remarks}
+
+\begin{enumerate}[label=(\alph*)]
+  \item I am not sure to understand the contribution claim "Our work fills this gap with a GPU-first toolchain that unifies modeling, differentiation, and solver execution" in section 2.
+  It can sound like "all the associated software of the toolchain are contributions of this article"?
+  Maybe the authors can clarify which software developments and efforts are specific contributions of this article.
+  \item I did not find the model and spec of the CPU used for the experiments in the article. Can you add it?
+  \item Can you clarify which floating-point arithmetic you use to perform the experiments?
+  \item Can you comment on why H100 needs more iterations than the A100 to beat CPU time? Also, can you explain why we do not see a significant performance improvement when using H100 over A100?
+  \item Why did you pick the direct solver CuDSS over a GPU-capable iterative solver (e.g., Krylov.jl)?
+  Is it simply for convenience, or are there mathematical/numerical reasons pushing for this choice?
+  \item I found the Figures hard to read and not very convenient for comparing the runs and the hardware.
+  For instance, in Fig. 7.4, it is difficult to even read the runtime's order of magnitude. The gray grids in the plots' backgrounds are too light and won't print well.
+  I realize afterward that Tables with the detailed execution time are available in the appendix.
+  But they are not advertised in the main text of the article and are hard to find.
+  I think that using a big Table spanning the two columns of the article instead of the current plots would be preferable for instance.
+\end{enumerate}
 
 \subsection*{(iii) -- Questions for Rebuttal}
 
 Nothing
+
+\subsection*{(iv) -- Response of the authors}
 
 \begin{answer}
   \begin{itemize}
@@ -254,8 +282,12 @@ While the work demonstrates solid engineering and effective implementation, it o
 
 What is the time breakdown across the different stages of the algorithm?
 
+\subsection*{(iv) -- Response of the authors}
+
 \begin{answer}
   \begin{itemize}
+      \item We added a sentence clarifying that the main computational effort in the optimization solver lies in solving sparse KKT systems on the GPU and performing automatic differentiation to evaluate sparse Jacobians and Hessians.
+      We also indicate which stages of these computations are parallelized and which are not.
       \item We added a table in the numerical experiments section to show the time consumption across the four stages of the algorithm for our test problems.
   \end{itemize}
 \end{answer}
@@ -267,7 +299,7 @@ We made other changes to the manuscript while it was in review.
 \begin{answer}
   \begin{itemize}
     \item Added references to our newly supported optimization solvers: \texttt{UnoSolver.jl} \citep{VanaretLeyffer2024}, \texttt{MadNCL.jl} \citep{MadNCL}, and \texttt{MadIPM.jl} \citep{montoison-2025}, and used them as examples of the modularity in our workflow.
-    \item Outlined upcoming work and research questions arising from the connection between these packages, such as solving batch optimization problems with varying initial conditions in optimal control problems.
+    \item Outlined upcoming work and research questions arising from the connection between these packages, such as solving batch optimization problems on GPU with varying initial conditions in optimal control problems.
   \end{itemize}
 \end{answer}
 
