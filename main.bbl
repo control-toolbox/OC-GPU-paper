@@ -66,6 +66,11 @@
   open-source framework for automatic control and dynamic optimization}},
   Optimal control applications and methods, 32 (2011), pp.~298--312.
 
+\bibitem{jeon2024}
+{\sc S.~H. Jeon, S.~Hong, H.~J. Lee, C.~Khazoom, and S.~Kim}, {\em {CusADi: A
+  GPU Parallelization Framework for Symbolic Expressions and Optimal Control}},
+  2024, \url{https://arxiv.org/abs/2408.09662}.
+
 \bibitem{lattner2004llvm}
 {\sc C.~Lattner and V.~Adve}, {\em {LLVM: A compilation framework for lifelong
   program analysis \& transformation}}, in International symposium on code
