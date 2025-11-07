@@ -182,8 +182,10 @@ Unauthorized reproduction of this article is prohibited}}
 \begin{abstract}
     We present a fully Julia-based, GPU-accelerated workflow for solving large-scale sparse nonlinear optimal control problems.
     Continuous-time dynamics are modeled and then discretized via direct transcription with \texttt{OptimalControl.jl} into structured sparse nonlinear programs.
-    These programs are compiled into GPU kernels using \texttt{ExaModels.jl}, leveraging SIMD parallelism for fast evaluation of objectives, constraints, gradients, Jacobians and Hessians.
-    The resulting sparse problems are solved entirely on GPU using the interior-point solver \texttt{MadNLP.jl} and the GPU sparse linear solver cuDSS, yielding significant speed-ups over CPU-based approaches.
+    The direct transcription of ODE dynamics produces block-separable constraints with identical computational patterns across time steps.
+    This regularity aligns naturally with SIMD execution on GPUs, enabling efficient batched evaluation of constraint and derivative computations.
+    These programs are compiled into GPU kernels using \texttt{ExaModels.jl} for fast evaluation of objectives, gradients, Jacobians, and Hessians.
+    The resulting sparse problems are solved entirely on GPU using the interior-point solver \texttt{MadNLP.jl} together with the GPU sparse linear solver cuDSS, yielding significant speed-ups over CPU-based approaches.
 \end{abstract}
 
 % \begin{keywords}
