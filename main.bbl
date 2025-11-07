@@ -85,6 +85,11 @@
   {ADNLPModels.jl}: Automatic differentiation models implementing the nlpmodels
   api}, 2021, \url{https://doi.org/10.5281/zenodo.4605982}.
 
+\bibitem{montoison-orban-2023}
+{\sc A.~Montoison and D.~Orban}, {\em {Krylov.jl: A Julia basket of hand-picked
+  Krylov methods}}, Journal of Open Source Software, 8 (2023), p.~5187,
+  \url{https://doi.org/10.21105/joss.05187}.
+
 \bibitem{montoison-orban-siquiera-nlpmodelsjump-2020}
 {\sc A.~Montoison, D.~Orban, and A.~S. Siqueira}, {\em {NLPModelsJuMP.jl}:
   Conversion from {JuMP} models to {NLPModels}}, 2020,
