@@ -205,13 +205,15 @@ Unauthorized reproduction of this article is prohibited}}
 \section{Introduction}
 
 Solving large-scale nonlinear optimal control problems is computationally demanding, especially with fine discretizations or real-time requirements.  
-While GPUs offer massive parallelism well-suited to these problems, fully exploiting their potential remains challenging due to the complexity of modeling, differentiation, and solver integration.
+While GPUs offer massive parallelism well-suited to these problems, fully exploiting their potential remains challenging due to the complexity of modeling, automatic differentiation, and solver integration.
 %
 We present a fully GPU-accelerated workflow, entirely built in Julia~\cite{bezanson2017julia}.
 Continuous-time dynamics are discretized with \texttt{OptimalControl.jl}~\cite{OC_jl} into structured, sparse nonlinear programs.  
 These are compiled with \texttt{ExaModels.jl}~\cite{shin2024accelerating} into GPU kernels that preserve sparsity and compute derivatives in a single pass, enabling efficient SIMD parallelism.
 %
 Problems are solved on NVIDIA GPUs using the interior-point solver \texttt{MadNLP.jl}~\cite{shin2021graph} and the sparse linear solver \texttt{CUDSS.jl}~\cite{Montoison_CUDSS_jl_Julia_interface}, enabling end-to-end acceleration from modeling to solving.
+We focus on NVIDIA hardware because efficient sparse KKT factorization is currently available only through cuDSS.
+Although our framework already runs on AMD and Intel GPUs, these backends rely on dense linear algebra for KKT solves and therefore serve mainly as proof-of-concept implementations.
 %
 We demonstrate the performance of this approach on benchmark problems solved on NVIDIA A100 and H100 GPUs.
 
@@ -250,12 +252,13 @@ These NLPs exhibit a sparse structure arising from time discretization: each nod
 Second-order methods, such as interior-point solvers, exploit this structure. % for efficient problem solution.
 %
 Most existing optimal control toolchains target CPU execution.
-For example, CasADi~\cite{Andersson2019} constructs symbolic expressions evaluated just-in-time or exported as C code, typically solved by CPU solvers like IPOPT~\cite{wachter2006implementation} or KNITRO~\cite{byrd2006k}, which rely on CPU linear solvers such as PARDISO~\cite{schenk2004solving}, MUMPS~\cite{amestoy2000mumps}, or HSL~\cite{fowkes2024libhsl}.
+For example, CasADi~\cite{Andersson2019} constructs symbolic expressions evaluated just-in-time or exported as C code, typically solved by CPU solvers like Ipopt~\cite{wachter2006implementation}, Uno~\cite{VanaretLeyffer2024}, or KNITRO~\cite{byrd2006k}, which rely on CPU linear solvers such as PARDISO~\cite{schenk2004solving}, MUMPS~\cite{amestoy2000mumps}, or HSL~\cite{fowkes2024libhsl}.
 %
 Other frameworks, such as ACADO~\cite{houska2011acado} and \texttt{InfiniteOpt.jl}~\cite{pulsipher2022unifying}, which cleverly leverage the modeling power of JuMP~\cite{dunning2017jump}, also follow the same CPU-centric paradigm.
 %
 This CPU focus limits scalability and real-time performance for large or time-critical problems that could benefit from GPU parallelism.
-While some libraries provide GPU-accelerated components, none deliver a fully integrated, GPU-native workflow for nonlinear optimal control. (See, nonetheless, the nice attempt \cite{jeon2024} trying to combine the CasADi API with PyTorch so as to evaluate part of the generated code on GPU.)
+While some libraries provide GPU-accelerated components, none deliver a fully integrated, GPU-native workflow for nonlinear optimal control.
+See, nonetheless, the nice attempt \cite{jeon2024} trying to combine the CasADi API with PyTorch so as to evaluate part of the generated code on GPU.
 %
 Our work fills this gap with a GPU-first toolchain that unifies modeling, differentiation, and solver execution, addressing the challenges of solving large-scale sparse NLPs.
 
@@ -263,14 +266,14 @@ Our work fills this gap with a GPU-first toolchain that unifies modeling, differ
 When discretized by \emph{direct transcription}, optimal control problems (OCPs) possess an inherent structure that naturally supports SIMD parallelism. 
 Consider indeed an optimal control with state $x(t) \in \mathbf{R}^n$, and control $u(t) \in \mathbf{R}^m$. Assume that the dynamics is modeled by the ODE
 $$ \dot{x}(t) = f(x(t), u(t)), $$
-where $f : \mathbf{R}^n \times \mathbf{R}^m \to \mathbf{R}^n$ is a smooth function. Using a one-step numerical scheme to discretise this ODE on a time grid $t_0, t_1, \dots, t_N$ of size $N + 1$ results in a set of equality constraints. For instance, with a forward Euler scheme, denoting $h_i := t_{i+1} - t_i$, one has ($X_i \simeq x(t_i)$, $U_i \simeq u(t_i)$)
+where $f : \mathbf{R}^n \times \mathbf{R}^m \to \mathbf{R}^n$ is a smooth function. Using a one-step numerical scheme to discretise this ODE on a time grid $t_0, t_1, \dots, t_N$ of size $N + 1$ results in a set of equality constraints. For instance, with a forward Euler scheme, denoting $h_i := t_{i+1} - t_i$, $X_i \simeq x(t_i)$, $U_i \simeq u(t_i)$, we have
 $$ X_{i+1} - X_i - h_i f(X_i, U_i) = 0,\quad i = 0, \dots, N-1. $$
 Similarly, a general Bolza cost that mixes endpoint and integral terms as in
-$$ g(x(0), x(t_f)) + \int_0^{t_f} f^0(x(t), u(t))\,\mathrm{d}t \to \min $$
+$$ g(x(t_0), x(t_f)) + \int_{t_0}^{t_f} f^0(x(t), u(t))\,\mathrm{d}t \to \min $$
 can be approximated by
 $$ g(X_0, X_N) + \sum_{i=0}^{N-1} h_i f^0(X_i, U_i). $$
 Discretising boundary or path constraints such as
-$$ b\big(x(0),x(t_f)\big) \leq 0,\quad c\big(x(t), u(t)\big) \leq 0 $$
+$$ b\big(x(t_0),x(t_f)\big) \leq 0,\quad c\big(x(t), u(t)\big) \leq 0 $$
 is obviously done according to
 $$ b(X_0, X_N) \leq 0, \quad c(X_i, U_i) \leq 0,\quad i = 0, \dots, N-1. $$
 The resulting NLP in the vector of unknowns $(X_0,\dots,X_N,U_0,\dots,U_{N-1})$
@@ -321,7 +324,7 @@ This ecosystem leverages the LLVM compiler~\cite{lattner2004llvm} and vendor API
 It allows users to exploit GPUs without requiring any knowledge of GPU programming.
 For instance, \texttt{ExaModels.jl} builds on \texttt{KernelAbstractions.jl} to automatically generate specialized GPU kernels for parallel evaluation of ODE residuals, Jacobians, and Hessians needed in optimal control problems.
 %
-We build on this ecosystem to create a complete GPU-accelerated toolchain spanning modeling, differentiation, and solving.
+We build on this ecosystem to create a complete GPU-accelerated toolchain spanning modeling, automatic differentiation, and solving.
 This results into a fully Julia-native workflow for modeling and solving ODE-constrained optimal control problems on GPU.
 %
 Key components of our stack include:
@@ -330,7 +333,7 @@ Key components of our stack include:
     \item[--] \texttt{OptimalControl.jl}: a domain-specific language for symbolic specification of OCPs, supporting both direct and indirect formulations.
     \item[--] \texttt{ExaModels.jl}: takes the discretized OCPs and produces sparse, SIMD-aware representations that preserve parallelism across grid points, compiling model expressions and their derivatives into optimized CPU/GPU code.
     \item[--] \texttt{MadNLP.jl}: a nonlinear programming solver implementing a filter line-search interior-point method, with GPU-accelerated linear algebra support.
-    \item[--] \texttt{CUDSS.jl}: a Julia wrapper around NVIDIA’s \texttt{cuDSS} sparse solver, enabling GPU-based sparse matrix factorizations essential for interior-point methods.
+    \item[--] \texttt{CUDSS.jl}: a Julia wrapper around NVIDIA's \texttt{cuDSS} sparse solver, enabling GPU-based sparse matrix factorizations essential for interior-point methods.
 \end{itemize}
 \noindent Together, these components form a high-level, performant stack that compiles intuitive Julia OCP models into efficient GPU code, achieving substantial speed-ups while maintaining usability.
 
@@ -340,6 +343,12 @@ Our approach offers several advantages:
     \item[--] \textbf{Performance}: just-in-time compilation, SIMD parallelism, and GPU-accelerated sparse linear algebra provide substantial runtime improvements.
     \item[--] \textbf{Portability}: symbolic modeling and kernel generation are backend-agnostic; the current limitation lies in sparse linear solvers, which are still CUDA-specific, but the framework is designed to integrate alternative backends as they become available.
 \end{itemize}
+
+One common concern in GPU‑accelerated workflows is the overhead of just‑in‑time (JIT) compilation.
+In our stack, this overhead is minimal because we precompile all performance‑critical code whenever possible using Julia 1.12 and tools like \texttt{PrecompileTools.jl}, thereby reducing warm‑up latency.
+Only a small fraction of code that depends on dynamic types or runtime-specialized kernels is compiled just-in-time; this JIT overhead is negligible in practice due to the highly regular structure of GPU kernels generated from transcribed ODE constraints.
+The GPU ecosystem is also moving toward runtime PTX / JIT compilation (for example, NVIDIA CUDA 13.0 deprecates offline compilation for older architectures), which aligns with this strategy.
+Combined, this strategy allows our workflow to efficiently exploit GPUs for large-scale or real-time optimal control problems.
 
 \section{From optimal control models to SIMD abstraction}
 To illustrate the transcription from the infinite dimensional setting towards a discretized optimization suited for SIMD parallelism, consider the following elementary optimal control problem with a state function, $x(t)$, valued in $\mathbf{R}^2$, and a scalar control, $u(t)$: minimize the (squared) $L^2$-norm of the control over the fixed time interval $[0,1]$,
@@ -366,24 +375,30 @@ end
 The intial and final times are fixed in this case but they could be additional unknowns (see, Appendix \ref{sa1}, where the Goddard benchmark problem is modeled with a free final time. Users can also declare additional finite-dimensional parameters (or \emph{variables}) to be optimized. Furthermore, extra constraints on the state, control, or other quantities can be imposed as needed.
 At this stage the crux is to seamlessly parse the abstract problem description and compile it on the fly into a discretized nonlinear optimization problem.
 We achieve this by exploiting two features.
-First, the DSL syntax is fully compatible with standard Julia, allowing us to use the language’s built-in lexical and syntactic parsers.
-Second, pattern matching via \texttt{MLStyle.jl} \cite{MLStyle_jl} extends Julia’s syntax with additional keywords such as \verb+state+ for declaring state variables, and implements the semantic pass that generates the corresponding discretized code.
-This discretized code can now be an \texttt{ExaModels.jl} model (while previously only modeling with ADNLPModels.jl was available, we have added the syntactic and semantic passes to generate ExaModels.jl models from the abstract description), which allows to declare 
-optimization variables (finite dimensional vector or arrays), constraints and cost.
-Regarding constraints, \texttt{ExaModels.jl} uses \emph{generators} in the form of \verb+for+ loop like statements to model the SIMD abstraction, ensuring that the function
-at the heart of the statement is mapped towards a \emph{kernel} (this is where \texttt{KernelAbstractions.jl} comes into play) and efficiently evaluated by the solver. All in all, the process merely is a compilation from \texttt{OptimalControl.jl} DSL, well suited for mathematical control abstractions, into \texttt{ExaModels.jl} DSL, tailored to describe optimization problems with strong SIMD potentialities. (As explained in Section~\ref{s3}, this is indeed the case for discretizations of optimal control problems.) 
+First, the DSL syntax is fully compatible with standard Julia, allowing us to use the language's built-in lexical and syntactic parsers.
+Second, pattern matching via \texttt{MLStyle.jl} \cite{MLStyle_jl} extends Julia's syntax with additional keywords such as \verb+state+ for declaring state variables, and implements the semantic pass that generates the corresponding discretized code.
+This discretized code can now be represented as an \texttt{ExaModels.jl} model.
+Previously, only the generic \texttt{ADNLPModels.jl} \cite{montoison-migot-orban-siqueira-2021} was available, which requires more user effort and provides limited guidance for automatic differentiation, making it harder to generate highly efficient code on GPU.
+We have therefore added syntactic and semantic passes to generate \texttt{ExaModels.jl} models directly from the abstract problem description, allowing users to declare optimization variables (finite-dimensional arrays), constraints, and cost functions while providing the solver with detailed problem structure.
+Because \texttt{ExaModels.jl} builds on the \texttt{NLPModels.jl} abstraction \cite{Orban_NLPModels_jl_Data_Structures_2023}, integrating support was straightforward.
+JuMP models can also be handled via \texttt{NLPModelsJuMP.jl} \cite{montoison-orban-siquiera-nlpmodelsjump-2020}, which wraps JuMP problems to expose the \texttt{NLPModels.jl} interface.
+However, this backend is currently limited to CPU execution, highlighting \texttt{ExaModels.jl} as the preferred alternative for high-performance, GPU-enabled optimal control.
+Regarding constraints, \texttt{ExaModels.jl} uses \emph{generators} in the form of \verb+for+ loop like statements to model the SIMD abstraction, ensuring that the function at the heart of the statement is mapped towards a \emph{kernel} (this is where \texttt{KernelAbstractions.jl} comes into play) and efficiently evaluated by the solver.
+All in all, the process merely is a compilation from \texttt{OptimalControl.jl} DSL, well suited for mathematical control abstractions, into \texttt{ExaModels.jl} DSL, tailored to describe optimization problems with strong SIMD potentialities.
+As explained in Section~\ref{s3}, this is indeed the case for discretizations of optimal control problems.
 This transcription process is mostly parametrized by the numerical scheme used to discretize the ODE.
 %
 A very important outcome of having a DSL for \texttt{ExaModels.jl} models is the ability for the package to automatically differentiate the mathematical expressions involved.
-Automatic differentiation (AD) is essential for modern second-order nonlinear solvers, such as IPOPT and \texttt{MadNLP.jl}, which rely on first- and second-order derivatives.
+Automatic differentiation (AD) is essential for modern second-order nonlinear solvers, such as Ipopt and \texttt{MadNLP.jl}, which rely on first- and second-order derivatives.
 
-Let us take a brief look at the generated code for this simple example. The code is wrapped in a function whose parameters capture the key aspects of the transcription process: the numerical scheme (here trapezoidal), the grid size (here uniform), the backend (CPU or GPU), the initial values for variables, states, and controls (defaulting to nonzero constants across the grid), and the base precision for vectors (defaulting to 64-bit floating point):
+Let us take a brief look at the generated code for this simple example.
+The code is wrapped in a function whose parameters capture the key aspects of the transcription process: the numerical scheme (here trapezoidal), the grid size (here uniform), the backend (CPU or GPU), the initial values for variables, states, and controls (defaulting to nonzero constants across the grid), and the base precision for vectors (defaulting to 64-bit floating point):
 
 {\small
 \begin{minted}{julia}
 function def(; scheme=:trapeze, grid_size=250,
   backend=CPU(), init=(0.1, 0.1, 0.1),
-  base_type = Float64)
+  base_type=Float64)
 \end{minted}
 }
 

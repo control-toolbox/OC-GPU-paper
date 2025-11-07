@@ -80,6 +80,20 @@
 {\sc A.~Montoison}, {\em {CUDSS.jl: Julia interface for NVIDIA cuDSS}},
   \url{github.com/exanauts/CUDSS.jl}.
 
+\bibitem{montoison-migot-orban-siqueira-2021}
+{\sc A.~Montoison, T.~Migot, D.~Orban, and A.~S. Siqueira}, {\em
+  {ADNLPModels.jl}: Automatic differentiation models implementing the nlpmodels
+  api}, 2021, \url{https://doi.org/10.5281/zenodo.4605982}.
+
+\bibitem{montoison-orban-siquiera-nlpmodelsjump-2020}
+{\sc A.~Montoison, D.~Orban, and A.~S. Siqueira}, {\em {NLPModelsJuMP.jl}:
+  Conversion from {JuMP} models to {NLPModels}}, 2020,
+  \url{https://doi.org/10.5281/zenodo.2574162}.
+
+\bibitem{Orban_NLPModels_jl_Data_Structures_2023}
+{\sc D.~Orban and A.~Soares~Siqueira}, {\em {NLPModels.jl: Data Structures for
+  Optimization Models}}, 2023.
+
 \bibitem{pacaud2024gpu}
 {\sc F.~Pacaud and S.~Shin}, {\em {GPU}-accelerated nonlinear model predictive
   control with {ExaModels} and {MadNLP}}, arXiv e-prints,  (2024),
@@ -110,6 +124,11 @@
 {\sc S.~Shin, C.~Coffrin, K.~Sundar, and V.~M. Zavala}, {\em Graph-based
   modeling and decomposition of energy infrastructures}, IFAC-PapersOnLine, 54
   (2021), pp.~693--698.
+
+\bibitem{VanaretLeyffer2024}
+{\sc C.~Vanaret and S.~Leyffer}, {\em Unifying nonlinearly constrained
+  nonconvex optimization}.
+\newblock Submitted to Mathematical Programming Computation, 2024.
 
 \bibitem{wachter2006implementation}
 {\sc A.~W{\"a}chter and L.~T. Biegler}, {\em On the implementation of an
