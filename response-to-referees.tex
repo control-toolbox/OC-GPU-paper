@@ -110,7 +110,8 @@ Our responses are summarized below.
 
 \begin{answer}
   \begin{itemize}
-      \item ...
+      \item Regarding both scientific contribution and novelty: to the best of our knowledge, as of today OptimalControl.jl is the only solver for optimal control problems running on CPU and GPU. There might be alternatives using some older solvers (such as CasADi which is a remarkable piece of work, in particular regarding auto diff) and adding some hand made tweaks to interface them with optimisers running on GPU (which one?), but this seems to be far from being easily accessible to the standard user. We could only find one ref. (Jeon \emph{et al} (2024)), now added to the bibliography, called "CusADi" that showcases such an attempt using a mix of Matlab and Python (with PyTorch) mix. (No maintained software seems to be available.) Plugging together our software, that previously was only able to use ADNLP as optimisation modeller, with ExaModels.jl necessitated some intensive metaprogramming: the original high level DSL has entirely been compiled into an ExaModels.ExaModel description of the discretised problem, allowing to call the compatible solver MadNLP.jl that indeed runs on GPU. This is definitely not "combining existing elements", which we have now clarified in the text. A byproduct of that is also faster runs even on CPU, using the modeller-solver pair ExaModels + MadNLP instead of ADNLP + Ipopt, both withs Mumps. These features were added to OptimalControl.jl v1.1.
+      \item The motivation of the paper was to illustrate the possibility to solve on GPU such optimal control problems, not to provide a worked out benchmark which, of course, would require a larger collection of problems. (This collection of problems is currently being built within the package OptimalControlProblems.jl and detailed benchmarking will be published somewhere else in time.) The two chosen problems are actually significant as they are rich enough to exhibit important peculiarities of optimal control problems, which we tried to emphasize at the beginning of Section 7 (stating that the solution of the Goddard case, for instance, is complex with four different kind of subarcs). Moreover, the results obtained on these two examples (and on two different CPU / GPU) were clearly illustrative of the gain obtained when solving on GPU vs. CPU: for large enough (typically $N =1000$) grid sizes, GPU does better (and keeps doing so for larger grid), with a typical speedup of magnitude $2$ to $10$. Our aim being the comparison between CPU and GPU for direct optimal control solvers (= that resort to discretizing the control problem into a math program), the only available possibility in Julia is indeed MadNLP.jl on an ExaModel.jl.
   \end{itemize}
 \end{answer}
 
@@ -159,6 +160,7 @@ Please see detailed feedback.
 
 \begin{answer}
   \begin{itemize}
+    \item To the best of our knowledge, there is no other established and well distributed optimal control solver on GPU. We only found an experimental attempt to combine CasADi API with Pytorch using a mix of Matlab and Python (plus \emph{ad hoc} compilations), named CusADi, that we now cite.
     \item We added sentences describing GPU backend support in our framework. We have officially added support for AMD GPUs: sparse linear systems are simply converted to dense ones and solved with rocSOLVER.
     We are currently working on similar support for Intel GPUs.
     \item Regarding JIT compilation, we added a precompilation setup in the optimization package \texttt{MadNLP.jl}, which should remove the JIT overhead.
@@ -196,7 +198,10 @@ I believe that an effective rebuttal would not be able to address the fundamenta
 
 \begin{answer}
   \begin{itemize}
-    \item We plan to add a few additional problems from \texttt{OptimalControlProblems.jl} \citep{OptimalControlProblems_jl} and provide a breakdown of the time spent in each stage of our workflow (model assembly, differentiation, linear algebra, other operations in the optimization solver) to support our performance analysis and strengthen the results presented in our conclusions.
+    \item Our aim is to illustrate the benefit of GPU solving over CPU, not to provide a worked out benchmark which would necessitate a much larger collection of test problems (this is being built in OptimalControlProblems.jl actually, and will open the way for other tests, not only on GPU vs. CPU). The two proposed examples exactly do that by providing the typical GPU over CPU speedup for large enough gridsizes. Currently, the only available optimization solver in Julia that runs on GPU is MadNLP.jl (combined with an ExaModels.jl model). We could of course add comparison with CPU runs of other solvers, \emph{e.g.} Ipopt on hand made JuMP discretizations (we actually have made these tests), but the added value for the paper would be close to zero: performances on CPU for JuMP + Ipopt are more or less the same as for ExaModels + MadNLP. (Actually the pair ExaModels + MadNLP often does slightly better, but not significantly.) We have added a comment Section 7 to clarify this point. 
+    \item We plan 
+    %to add a few additional problems from \texttt{OptimalControlProblems.jl} \citep{OptimalControlProblems_jl} 
+    to provide a breakdown of the time spent in each stage of our workflow (model assembly, differentiation, linear algebra, other operations in the optimization solver) to support our performance analysis and strengthen the results presented in our conclusions.
   \end{itemize}
 \end{answer}
 
@@ -251,7 +256,11 @@ Nothing
 
 \begin{answer}
   \begin{itemize}
-    \item We plan to add a few additional problems from \texttt{OptimalControlProblems.jl} \citep{OptimalControlProblems_jl} to have five problems in total, providing more results to support our comments on performance analysis. 
+    \item The software dev associated with this article is more than a mere combination of existing tools (namely modeler + optimisation solver + linear algebra). In order to maintain a high-level (= close to the math) modeling at the optimal control level (which is one the thing we believe is very important for most users-we do already have feedback on that, and on the performance), we need to parse OptimalControl.jl DSL and compile it into an ExaModels.jl model, tailored for optimization on GPU with MadNLP.jl. This is done through an intensive use of metaprogramming in Julia to capture the description and do a syntactic + semantic pass to generate the code. We have a provided a few details on the generated code in Section 5 to illustrate the translation into GPU friendly modeling thanks to ExaModels.jl, but did not give any specific information on the translation process itself (metaprogramming + pattern matching + one single pass treating both syntactic and semantic) as we believe it does not belong exactly to the scope of the conference.
+    \item We added the CPU model used for the numerical results.
+    \item The ticks on the four figures have now been updated and should be more readable.
+    \item Regarding plots vs. table(s): we believe it is important to be able to see graphically that CPU and GPU curves indeed cross around $N = 1e3$. Of course, we can use a large table spanning the two columns in the final version.
+    %\item We plan to add a few additional problems from \texttt{OptimalControlProblems.jl} \citep{OptimalControlProblems_jl} to have five problems in total, providing more results to support our comments on performance analysis. 
     \item We added the CPU model used for the numerical results.
     \item The cluster with H100 has a slower CPU than the one with A100.
     This difference is not related to the GPU model.
