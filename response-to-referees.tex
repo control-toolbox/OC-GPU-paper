@@ -172,12 +172,12 @@ Please see detailed feedback.
   \begin{itemize}
     \item To the best of our knowledge, there is no other established and well distributed optimal control solver on GPU. We only found an experimental attempt to combine CasADi API with Pytorch using a mix of Matlab and Python (plus \emph{ad hoc} compilations), named CusADi, that we now cite \citep{jeon2024}.
     \item We added sentences describing GPU backend support in our framework. We have officially added support for AMD GPUs: sparse linear systems are simply converted to dense ones and solved with rocSOLVER.
-    We are currently working on similar support for Intel GPUs.
+    We are currently working on similar support for Intel GPUs with oneMKL.
     \item Regarding JIT compilation, we added a precompilation setup in the optimization package \texttt{MadNLP.jl}, which should remove the JIT overhead.
     This precompilation workflow has not yet been integrated into \texttt{OptimalControl.jl}.
     We added sentences in the paper to clarify this difference compared to compiled-code execution.
     \item The memory usage is quite similar to what can be achieved in low-level languages such as C or Fortran, since Julia provides fine-grained control over memory reuse and allocation. However, the main overhead comes from the garbage collector, which we do not force for performance reasons, but which can put pressure on the GPU.
-    A sentence describing these points was added to the paper.
+    A sentence describing these points will be added to the paper.
   \end{itemize}
 \end{answer}
 
@@ -275,12 +275,14 @@ Nothing
     We have a provided a few details on the generated code in Section 5 to illustrate the translation into GPU friendly modeling thanks to \texttt{ExaModels.jl}, but did not give any specific information on the translation process itself (metaprogramming + pattern matching + one single pass treating both syntactic and semantic) as we believe it does not belong exactly to the scope of the conference.
     \item The ticks on the four figures have now been updated and should be more readable.
     \item Regarding plots vs. table(s): we believe it is important to be able to see graphically that CPU and GPU curves indeed cross around $N = 1e3$. Of course, we can use a large table spanning the two columns in the final version.
-    \item We added the CPU model used for the numerical results.
+    \item We will add the CPU model used for the numerical results.
     \item The cluster with H100 has a slower CPU than the one with A100.
     This difference is not related to the GPU model.
     \item We do not observe a significant improvement when using H100 over A100 because, in the nonlinear optimization solver, most of the computational work is spent solving the sparse KKT systems.
     The main bottleneck for speed-up is memory communication rather than computation itself.
-    More precisely, the comparison depends primarily on the memory architecture of each GPU - such as the HBM generation, bandwidth, on-chip shared memory, and interconnect topology - rather than on raw FLOPS or peak compute throughput.
+    More precisely, the comparison depends primarily on the memory architecture of each GPU, such as the HBM generation, bandwidth, on-chip shared memory, and interconnect topology, rather than on raw FLOPS or peak compute throughput.
+    We plan to explain this in Section 7, which is dedicated to benchmarks.
+    We will also show that once the memory cache is exceeded and the computation enters a regime dominated by memory bandwidth and transfer, the maximum speed-up is limited to around 10x due to the fundamental differences in RAM and VRAM architectures between CPUs and GPUs.
     % For example, NVIDIA's A100 is based on HBM2/HBM2e memory with a bandwidth up to 2 TB/s, whereas the H100 uses HBM3 with bandwidth up to 3.35 TB/s and a redesigned memory hierarchy.
     \item We use a direct solver instead of Krylov solvers because the optimization solver implemented in \texttt{MadNLP.jl} \citep{shin2024accelerating,shin2021graph} is a primal-dual interior point method.
     The KKT systems are known to be very hard to solve with Krylov methods due to the clustering of eigenvalues, which is caused by some terms in the KKT systems that approach zero or infinity.
@@ -314,9 +316,8 @@ What is the time breakdown across the different stages of the algorithm?
 
 \begin{answer}
   \begin{itemize}
-      \item We added a sentence clarifying that the main computational effort in the optimization solver lies in solving sparse KKT systems on the GPU and performing automatic differentiation to evaluate sparse Jacobians and Hessians.
-      We also indicate which stages of these computations are parallelized and which are not.
-      \item We added a table in the numerical experiments section to show the time consumption across the four stages of the algorithm for our test problems.
+      \item A sentence to clarify that the main computational effort in the optimization solver lies in solving sparse KKT systems on the GPU and performing automatic differentiation to evaluate sparse Jacobians and Hessians, and that the former is harder to parallelize than the latter.
+      \item We plan to add a table in the numerical experiments section showing the time spent in the four stages of the algorithm for our test problems, along with a sentence specifying which of these stages are GPU-friendly.
   \end{itemize}
 \end{answer}
 
@@ -326,7 +327,9 @@ We made other changes to the manuscript while it was in review.
 
 \begin{answer}
   \begin{itemize}
-    \item Added references to our newly supported optimization solvers: \texttt{UnoSolver.jl} \citep{VanaretLeyffer2024}, \texttt{MadNCL.jl} \citep{MadNCL}, and \texttt{MadIPM.jl} \citep{montoison-2025}, and used them as examples of the modularity in our workflow.
+    \item Added references to our newly supported GPU optimization solvers:
+    % \texttt{UnoSolver.jl} \citep{VanaretLeyffer2024},
+    \texttt{MadNCL.jl} \citep{MadNCL}, and \texttt{MadIPM.jl} \citep{montoison-2025}, and used them as examples of the modularity in our workflow.
     \item Outlined upcoming work and research questions arising from the connection between these packages, such as solving batch optimization problems on GPU with varying initial conditions in optimal control problems.
   \end{itemize}
 \end{answer}

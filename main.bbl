@@ -90,6 +90,17 @@
   Conversion from {JuMP} models to {NLPModels}}, 2020,
   \url{https://doi.org/10.5281/zenodo.2574162}.
 
+\bibitem{MadNCL}
+{\sc A.~Montoison, F.~Pacaud, M.~Saunders, S.~Shin, and D.~Orban}, {\em
+  {MadNCL: A GPU Implementation of Algorithm NCL for Large-Scale, Degenerate
+  Nonlinear Programs}}, arXiv preprint arXiv:2510.05885,  (2025).
+
+\bibitem{montoison-2025}
+{\sc A.~Montoison, F.~Pacaud, S.~Shin, and M.~Anitescu}, {\em {GPU
+  Implementation of Second-Order Linear and Nonlinear Programming Solvers}},
+  2025, \url{https://arxiv.org/abs/2508.16094},
+  \url{https://arxiv.org/abs/2508.16094}.
+
 \bibitem{Orban_NLPModels_jl_Data_Structures_2023}
 {\sc D.~Orban and A.~Soares~Siqueira}, {\em {NLPModels.jl: Data Structures for
   Optimization Models}}, 2023.
