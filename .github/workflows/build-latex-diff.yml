@@ -7,7 +7,7 @@ jobs:
   build_latex:
     runs-on: ubuntu-latest
     env:
-      PAPER: "main"
+      PAPER: "main_isc"
       MAIN: ${{ github.event.pull_request.base.sha }}
     steps:
       - name: Set up Git repository
