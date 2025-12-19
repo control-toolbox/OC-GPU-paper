@@ -27,7 +27,12 @@
 \usepackage{cite}
 \usepackage{algorithmic}
 \usepackage{textcomp}
-\usepackage{hyperref}
+\usepackage[
+  colorlinks=true,
+  linkcolor=black,
+  citecolor=black,
+  urlcolor=black
+]{hyperref}
 \usepackage{amsmath,amssymb,amsfonts}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
@@ -53,8 +58,8 @@
 
 % Define a switch for double-blind mode
 \newif\ifblind
-% \blindtrue  % set \blindfalse for non-blind mode
-\blindfalse
+\blindtrue  % set \blindfalse for non-blind mode
+% \blindfalse
 
 % PDF metadata
 \ifblind
@@ -142,7 +147,7 @@ We demonstrate the performance of this approach on benchmark problems solved on 
 
 \vspace{0.5cm}
 \begin{tikzpicture}[
-  node distance=1.3cm and 2cm,
+  node distance=1.3cm and 1.5cm,
   every node/.style={font=\scriptsize},
   box/.style={
     draw, rounded corners, thick,
@@ -317,9 +322,9 @@ The code is wrapped in a function whose parameters capture the key aspects of th
 
 {\small
 \begin{minted}{julia}
-function def(; scheme=:trapeze, grid_size=250,
-  backend=CPU(), init=(0.1, 0.1, 0.1),
-  base_type=Float64)
+function def(; scheme=:trapeze,
+  grid_size=250, init=(0.1, 0.1, 0.1),
+  backend=CPU(), base_type=Float64)
 \end{minted}
 }
 
@@ -332,7 +337,8 @@ function def(; scheme=:trapeze, grid_size=250,
 x = begin
   local ex
   try
-    variable(var"p_ocp##266", 2, 0:grid_size;
+    variable(var"p_ocp##266", 2,
+      0:grid_size;
       lvar = [var"l_x##271"[var"i##275"]
       for (var"i##275", var"j##276") =
       Base.product(1:2, 0:grid_size)],
@@ -369,11 +375,13 @@ end
 A runtime dimension check ensures that the specified bounds match the length of the state vector being addressed:
 {\small
 \begin{minted}{julia}
-length([-1, 0]) == length([-1, 0]) ==
-  length(1:2) || throw("wrong bound dimension")
-constraint(var"p_ocp##266", (x[var"i##283", 0]
-  for var"i##283" = 1:2); lcon = [-1, 0],
-  ucon = [-1, 0])
+length([-1, 0]) ==
+  length([-1, 0]) == length(1:2)
+  || throw("wrong bound dimension")
+  constraint(var"p_ocp##266",
+  (x[var"i##283", 0] for
+  var"i##283" = 1:2);
+  lcon = [-1, 0], ucon = [-1, 0])
 \end{minted}
 }
 
@@ -382,9 +390,10 @@ constraint(var"p_ocp##266", (x[var"i##283", 0]
 {\small
 \begin{minted}{julia} 
 constraint(var"p_ocp##266j",
-  ((x[1, var"j##291" + 1] - x[1, var"j##291"])
-  - (var"dt##268" * (x[2, var"j##291"] +
-  x[2, var"j##291" + 1])) / 2
+  ((x[1, var"j##291" + 1] -
+  x[1, var"j##291"]) - (var"dt##268"
+  * (x[2, var"j##291"] +
+  x[2, var"j##291" + 1]))/2
   for var"j##291" = 0:grid_size - 1))
 \end{minted}
 }
@@ -393,11 +402,13 @@ constraint(var"p_ocp##266j",
  
 {\small
 \begin{minted}{julia}
-objective(var"p_ocp##266", ((1 * var"dt##268" *
-  (0.5 * var"u##277"[1, var"j##299"] ^ 2)) / 2
+objective(var"p_ocp##266",
+  ((1 * var"dt##268" * (0.5 *
+  var"u##277"[1, var"j##299"]^2))/2
   for var"j##299" = (0, grid_size)))
-objective(var"p_ocp##266", (1 * var"dt##268" *
-  (0.5 * var"u##277"[1, var"j##299"] ^ 2)
+objective(var"p_ocp##266",
+  (1 * var"dt##268" *
+  (0.5 * var"u##277"[1, var"j##299"]^2)
   for var"j##299" = 1:grid_size - 1))
 \end{minted}
 }
@@ -512,8 +523,7 @@ Overall, the synergy between Julia GPU tools, SIMD structure in direct optimal c
 \subsection{Descriptions of the control problems used for the benchmark}
 \label{sa1}
 The complete code to reproduce the runs of Section~\ref{s6} can be retrieved at the following address:
-\href{https://anonymous.4open.science/r/OC-GPU-PP26}{\texttt{https://anonymous.4open.science/r/OC-GPU-PP26}}
-% \href{https://github.com/control-toolbox/OC-GPU-paper}{\texttt{github.com/control-toolbox/OC-GPU-paper}}\\
+\href{https://anonymous.4open.science/r/OC-GPU/}{\texttt{https://anonymous.4open.science/r/OC-GPU/}}
 
 {\small
 \begin{minted}{julia}
@@ -572,34 +582,38 @@ o = @def begin
     x(0) == zeros(9)
 
     derivative(x1)(t) == x2(t)
-    derivative(x2)(t) == u1(t) * cos(x7(t)) *
-      sin(x8(t)) * cos(x9(t)) + u1(t) *
-      sin(x7(t)) * sin(x9(t))
+    derivative(x2)(t) == u1(t)
+    * cos(x7(t)) * sin(x8(t))
+    * cos(x9(t)) + u1(t)
+    * sin(x7(t)) * sin(x9(t))
     derivative(x3)(t) == x4(t)
-    derivative(x4)(t) == u1(t) * cos(x7(t)) *
-      sin(x8(t)) * sin(x9(t)) - u1(t) *
-      sin(x7(t)) * cos(x9(t))
+    derivative(x4)(t) == u1(t)
+    * cos(x7(t)) * sin(x8(t))
+    * sin(x9(t)) - u1(t)
+    * sin(x7(t)) * cos(x9(t))
     derivative(x5)(t) == x6(t)
-    derivative(x6)(t) == u1(t) * cos(x7(t)) *
-      cos(x8(t)) - g 
-    derivative(x7)(t) == u2(t) * cos(x7(t)) /
-      cos(x8(t)) + u3(t) *
-      sin(x7(t)) / cos(x8(t))
-    derivative(x8)(t) ==-u2(t) * sin(x7(t)) +
-      u3(t) * cos(x7(t))
-    derivative(x9)(t) == u2(t) * cos(x7(t)) *
-      tan(x8(t)) + u3(t) * sin(x7(t)) *
-      tan(x8(t)) + u4(t)
+    derivative(x6)(t) == u1(t)
+    * cos(x7(t)) * cos(x8(t)) - g 
+    derivative(x7)(t) == u2(t)
+    * cos(x7(t)) / cos(x8(t)) + u3(t)
+    * sin(x7(t)) / cos(x8(t))
+    derivative(x8)(t) ==-u2(t)
+    * sin(x7(t)) + u3(t) * cos(x7(t))
+    derivative(x9)(t) == u2(t)
+    * cos(x7(t)) * tan(x8(t))
+    + u3(t) * sin(x7(t))
+    * tan(x8(t)) + u4(t)
 
     dt1 = sin(2pi * t / T)
     dt3 = 2sin(4pi * t / T)
     dt5 = 2t / T
 
     0.5integral( (x1(t) - dt1)^2 +
-      (x3(t) - dt3)^2 + (x5(t) - dt5)^2 +
-      x7(t)^2 + x8(t)^2 + x9(t)^2 + r *
-      (u1(t)^2 + u2(t)^2 +
-      u3(t)^2 + u4(t)^2) ) => min
+      (x3(t) - dt3)^2 + (x5(t)
+      - dt5)^2 + x7(t)^2 + x8(t)^2
+      + x9(t)^2 + r * (u1(t)^2
+      + u2(t)^2 + u3(t)^2
+      + u4(t)^2) ) => min
 
 end
 \end{minted}
