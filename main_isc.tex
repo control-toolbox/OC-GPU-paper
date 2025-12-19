@@ -1,56 +1,9 @@
-% todo: page limit (= 10); deadline 2/9/2025; also quote JLESC / InfraRED 
-% unicode characters in \begin{minted}{julia} ...
-% https://www.siam.org/conferences-events/siam-conferences/pp26/submissions/ 
-%%%%%%%%%%%%%%%%%%%%%%%%%%  example_doublecolumn.tex  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-%
-% This is example_twocolumn.tex, an example file for use with the SIAM LaTeX2E
-% Proceedings macros. It is designed to provide two-column output. Please take
-% the time to read the following comments, as they document how to use the
-% SIAM Proceedings macro files. This file can be composed and printed out for
-% use as sample output.
-%
-% Please submit suggestions for changes to: tex@siam.org.
-%
-% This file is to be used as an example for style only. It should not be read
-% for content.
-
-%%%%%%%%%%%%%%% PLEASE NOTE THE FOLLOWING STYLE RESTRICTIONS %%%%%%%%%%%%%%%
-
-%%  1. There are no new tags.  Existing LaTeX tags have been formatted to match
-%%     the SIAM Proceedings style.
-%%
-%%  2. Do not change the margins or page size!  Do not change from the default
-%%     text font or the default text size of 10pt!
-%%
-%%  3. We recommend that you use BibTeX and siamplain.bst to list your references.
-%%     You can use \cite in the text to mark your reference citations and
-%%     \bibitem in the listing of references at the end of your chapter. See
-%%     the examples in the following file. If you do use BibTeX, please supply
-%%     your bib or bbl file with the manuscript file.
-%%
-%%  4. This macro is set up for two levels of headings (\section and
-%%     \subsection). The macro will automatically number the headings for you.
-%%
-%%  5. No running heads are to be used.
-%%
-%%  6. Theorems, Lemmas, Definitions, Equations, etc. are to be double numbered,
-%%     indicating the section and the occurrence of that element within that 
-%%     section. (For example, the first theorem in the second section would be 
-%%     numbered 2.1. The macro will automatically do the numbering for you.
-%%
-%%  7. Figures and Tables must be single-numbered. Use existing LaTeX tags for 
-%%     these elements. Numbering will be done automatically.
-%%
-%%  8. Page numbering is not included in this macro since pagination
-%%     will be set by the program committee.
-%%
-
-\documentclass[twoside,leqno,twocolumn]{article}
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
 
 % Comment out the line below if using A4 paper size
 \usepackage[letterpaper]{geometry}
-
-\usepackage{siamproceedings}
 
 \usepackage{tikzscale}
 \usepackage{pgfplots}
@@ -71,25 +24,19 @@
 \usepackage{algorithmic}
 \usepackage{booktabs}
 % \usepackage{jlcode}
-
+\usepackage{cite}
+\usepackage{algorithmic}
+\usepackage{textcomp}
+\usepackage{hyperref}
+\usepackage{amsmath,amssymb,amsfonts}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+    
 \ifpdf
   \DeclareGraphicsExtensions{.eps,.pdf,.png,.jpg}
 \else
   \DeclareGraphicsExtensions{.eps}
 \fi
-
-% Add a serial/Oxford comma by default.
-\newcommand{\creflastconjunction}{, and~}
-
-% Used for creating new theorem and remark environments
-\newsiamremark{remark}{Remark}
-\newsiamremark{hypothesis}{Hypothesis}
-\crefname{hypothesis}{Hypothesis}{Hypotheses}
-\newsiamthm{claim}{Claim}
-
-%%Currently, the algorithm title font matches the figure and table title
-%%fonts. To make the algorithm title font appear as small caps, uncomment
-%%the following code:
 
 %\makeatletter
 %\renewcommand{\ALG@name}{\sc Algorithm}
@@ -106,8 +53,8 @@
 
 % Define a switch for double-blind mode
 \newif\ifblind
-%\blindtrue  % set \blindfalse for non-blind mode
-\blindtrue
+% \blindtrue  % set \blindfalse for non-blind mode
+\blindfalse
 
 % PDF metadata
 \ifblind
@@ -135,16 +82,19 @@
   \author{}
 \else
   \author{%
-    Alexis Montoison%
-    \thanks{%
-      Mathematics and Computer Science Division, Argonne National Laboratory, IL, USA.
-      E-mail: \email{amontoison@anl.gov}
+    \IEEEauthorblockN{1\textsuperscript{st} Alexis Montoison}
+    \IEEEauthorblockA{
+        \textit{Mathematics and Computer Science Division} \\
+        \textit{Argonne National Laboratory}\\
+        Lemont, IL, USA \\
+        amontoison@anl.gov
     }
     \and
-    Jean-Baptiste Caillau%
-    \thanks{%
-      Universit\'e C\^ote d'Azur, CNRS, Inria, LJAD.
-      E-mail: \email{jean-baptiste.caillau@univ-cotedazur.fr}
+    \IEEEauthorblockN{2\textsuperscript{nd} Jean-Baptiste Caillau}
+    \IEEEauthorblockA{
+        \textit{Universit\'e C\^ote d'Azur, CNRS, Inria, LJAD} \\
+        Nice, France \\
+        jean-baptiste.caillau@univ-cotedazur.fr
     }
   }
 \fi
@@ -153,31 +103,6 @@
 \date{}
 
 \maketitle
-
-% Copyright Statement
-% When submitting your final paper to a SIAM proceedings, it is requested that you include
-% the appropriate copyright in the footer of the paper.  The copyright added should be
-% consistent with the copyright selected on the copyright form submitted with the paper.
-% Please note that "20XX" should be changed to the year of the meeting.
-
-% Default Copyright Statement
-\ifblind
-\fancyfoot[R]{\scriptsize{Copyright \textcopyright\ 20XX by SIAM\\
-Unauthorized reproduction of this article is prohibited}}
-\fi
-
-% Depending on which copyright you agree to when you sign the copyright form, the copyright
-% can be changed to one of the following after commenting out the default copyright statement
-% above.
-
-%\fancyfoot[R]{\scriptsize{Copyright \textcopyright\ 20XX\\
-%Copyright for this paper is retained by authors}}
-
-%\fancyfoot[R]{\scriptsize{Copyright \textcopyright\ 20XX\\
-%Copyright retained by principal author's organization}}
-
-%\pagenumbering{arabic}
-%\setcounter{page}{1}%Leave this line commented out.
 
 \begin{abstract}
     We present a fully Julia-based, GPU-accelerated workflow for solving large-scale sparse nonlinear optimal control problems.
@@ -188,16 +113,9 @@ Unauthorized reproduction of this article is prohibited}}
     The resulting sparse problems are solved entirely on GPU using the interior-point solver \texttt{MadNLP.jl} together with the GPU sparse linear solver cuDSS, yielding significant speed-ups over CPU-based approaches.
 \end{abstract}
 
-% \begin{keywords}
-% optimal control, GPU acceleration, sparse automatic differentiation, interior-point methods, Julia, nonlinear programming, domain-specific language
-% \end{keywords}
-
-% \begin{AMS}
-% 65K10, % Numerical optimization and variational techniques
-% 49M37, % Methods of nonlinear programming type
-% 65Y20, % Complexity and performance of numerical algorithms
-% 68N19  % Other programming techniques (include parallel and GPU programming)
-% \end{AMS}
+\begin{IEEEkeywords}
+optimal control, GPU acceleration, sparse automatic differentiation, interior-point methods, Julia, nonlinear programming, domain-specific language
+\end{IEEEkeywords}
 
 %\tableofcontents
 %\listoftodos\relax
@@ -582,8 +500,9 @@ Overall, the synergy between Julia GPU tools, SIMD structure in direct optimal c
 
 %\small
 % \bibliographystyle{abbrvnat}
-\bibliographystyle{siamplain}
-\bibliography{abbrv,main}
+% \bibliographystyle{siamplain}
+\bibliographystyle{IEEEtran}
+\bibliography{abbrv,main_isc}
 
 %\newpage
 \appendix 
