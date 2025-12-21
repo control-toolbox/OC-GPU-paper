@@ -183,10 +183,10 @@ For example, CasADi~\cite{Andersson2019} constructs symbolic expressions evaluat
 Other frameworks, such as ACADO~\cite{houska2011acado} and \texttt{InfiniteOpt.jl}~\cite{pulsipher2022unifying}, which cleverly leverage the modeling power of JuMP~\cite{dunning2017jump}, also follow the same CPU-centric paradigm.
 %
 This CPU focus limits scalability and real-time performance for large or time-critical problems that could benefit from GPU parallelism.
-While some libraries provide GPU-accelerated components, none deliver a fully integrated, GPU-native workflow for nonlinear optimal control.
-See, nonetheless, the nice attempt \cite{jeon2024} trying to combine the CasADi API with PyTorch so as to evaluate part of the generated code on GPU.
+While some libraries provide GPU-accelerated components, very few deliver a fully integrated, GPU-native workflow for nonlinear optimal control.
+See, nonetheless, the nice attempt \cite{jeon2024} trying to combine the CasADi API with PyTorch so as to evaluate part of the generated code on GPU; see as well the recent release of \texttt{InfiniteOpt.jl} \cite{Gondosiswanto2025advances} that follows a line similar to ours, leveraging \texttt{ExaModels.jl} SIMD modeling abilities for GPU.
 %
-Our work fills this gap with a GPU-first toolchain that unifies modeling, differentiation, and solver execution, addressing the challenges of solving large-scale sparse NLPs.
+Our work contributes to fill this gap with a GPU-first toolchain that unifies modeling, differentiation, and solver execution, addressing the challenges of solving large-scale sparse NLPs. In contrast to other available solvers, our framework encompasses both direct transcription for optimal control problems (that is discretization into a math program, suited for optimization solvers and GPU evaluation as discussed in the rest of the paper), and indirect methods (\emph{aka.} shooting; we refer the reader to \cite{OC_jl} for further details).
 
 \section{SIMD parallelism in direct optimal control} \label{s3}
 When discretized by \emph{direct transcription}, optimal control problems (OCPs) possess an inherent structure that naturally supports SIMD parallelism. 
@@ -285,7 +285,7 @@ and boundary conditions
 $$ x(0) = (-1, 0),\quad x(1) = (0,0). $$
 The strength of the DSL of the package \texttt{OptimalControl.jl} is to offer a syntax as close as possible to this mathematical formulation.\footnote{Note that one can actually use unicode characters to denote derivatives, integral, \emph{etc.}, making this closeness even more striking. Check \texttt{OptimalControl.jl} documentation online.} The translation of this optimal control problem so reads:
 
-\begin{minted}{julia}
+{\footnotesize \begin{minted}{julia}
 ocp = @def begin
     t in [0, 1], time
     x in R^2, state
@@ -297,8 +297,9 @@ ocp = @def begin
     integral( 0.5u(t)^2 ) => min
 end
 \end{minted}
+}
 
-The intial and final times are fixed in this case but they could be additional unknowns (see, Appendix \ref{sa1}, where the Goddard benchmark problem is modeled with a free final time. Users can also declare additional finite-dimensional parameters (or \emph{variables}) to be optimized. Furthermore, extra constraints on the state, control, or other quantities can be imposed as needed.
+The initial and final times are fixed in this case but they could be additional unknowns (see, Appendix \ref{sa1}, where the Goddard benchmark problem is modeled with a free final time. Users can also declare additional finite-dimensional parameters (or \emph{variables}) to be optimized. Furthermore, extra constraints on the state, control, or other quantities can be imposed as needed.
 At this stage the crux is to seamlessly parse the abstract problem description and compile it on the fly into a discretized nonlinear optimization problem.
 We achieve this by exploiting two features.
 First, the DSL syntax is fully compatible with standard Julia, allowing us to use the language's built-in lexical and syntactic parsers.
@@ -320,8 +321,7 @@ Automatic differentiation (AD) is essential for modern second-order nonlinear so
 Let us take a brief look at the generated code for this simple example.
 The code is wrapped in a function whose parameters capture the key aspects of the transcription process: the numerical scheme (here trapezoidal), the grid size (here uniform), the backend (CPU or GPU), the initial values for variables, states, and controls (defaulting to nonzero constants across the grid), and the base precision for vectors (defaulting to 64-bit floating point):
 
-{\small
-\begin{minted}{julia}
+{\footnotesize \begin{minted}{julia}
 function def(; scheme=:trapeze,
   grid_size=250, init=(0.1, 0.1, 0.1),
   backend=CPU(), base_type=Float64)
@@ -329,11 +329,9 @@ function def(; scheme=:trapeze,
 }
 
 \noindent The state declaration is compiled into an \texttt{ExaModels.jl} variable representing a $2 \times (N + 1)$ array, where $N$ is the grid size. Lower and upper bounds, plus initial values can be specified, and constraints are vectorized across grid points. Internally, the DSL uses metaprogramming to generate unique variable names and ensure proper initialization, while any syntactic or semantic errors are caught and reported at runtime.
-% The state declaration is compiled into an \texttt{ExaModels.jl} variable declaration, here a $2 \times (N + 1)$ array where $N$ is the grid size. Note that lower and upper bounds can be provided at this step (with a first \verb+for+ statement to vectorize the constraint over all grid points), as well as initial values for the optimizer and base type for vector elements (here fp64).
-% The whole declaration block is wrapped in a \verb+try ... catch+ statement so that syntactic (or semantic) errors can be returned to the user at runtime:
+The state declaration is compiled into an \texttt{ExaModels.jl} variable declaration, here a $2 \times (N + 1)$ array where $N$ is the grid size. Note that lower and upper bounds can be provided at this step (with a first \verb+for+ statement to vectorize the constraint over all grid points), as well as initial values for the optimizer and base type for vector elements (here fp64). The whole declaration block is wrapped in a \verb+try ... catch+ statement so that syntactic (or semantic) errors can be returned to the user at runtime:
 
-{\small
-\begin{minted}{julia}
+{\footnotesize \begin{minted}{julia}
 x = begin
   local ex
   try
@@ -346,10 +344,10 @@ x = begin
       for (var"i##275", var"j##276") =
       Base.product(1:2, 0:grid_size)],
       start = init[2])
-    catch ex
-      println("Line ", 2, ": ",
-        "(x in R^2, state)")
-      throw(ex)
+  catch ex
+    println("Line ", 2, ": ",
+      "(x in R^2, state)")
+    throw(ex)
   end
 end
 \end{minted}
@@ -371,10 +369,9 @@ end
 % \end{minted}
 % }
 
-\noindent The initial-state boundary constraint must be applied across all state dimensions. This is achieved using the \verb+for+ generator.
-A runtime dimension check ensures that the specified bounds match the length of the state vector being addressed:
-{\small
-\begin{minted}{julia}
+\noindent The initial-state boundary constraint must be applied across all state dimensions. This is achieved using the \verb+for+ generator. A runtime dimension check ensures that the specified bounds match the length of the state vector being addressed:
+
+{\footnotesize \begin{minted}{julia}
 length([-1, 0]) ==
   length([-1, 0]) == length(1:2)
   || throw("wrong bound dimension")
@@ -387,8 +384,7 @@ length([-1, 0]) ==
 
 \noindent The first equation of the ODE system is discretized using the trapezoidal scheme, and the corresponding expression (here the right hand side is just $x_2(t)$) is declared thanks to the \verb+for+ generator tailored for SIMD abstraction:
 
-{\small
-\begin{minted}{julia} 
+{\footnotesize \begin{minted}{julia} 
 constraint(var"p_ocp##266j",
   ((x[1, var"j##291" + 1] -
   x[1, var"j##291"]) - (var"dt##268"
@@ -400,8 +396,7 @@ constraint(var"p_ocp##266j",
 
 \noindent The same goes on for the second dimension of the ODE, and for the Lagrange integral cost as well, where the same numerical scheme (trapezoidal rule again) is employed for consistency (defining two objectives actually computes their sum):
  
-{\small
-\begin{minted}{julia}
+{\footnotesize \begin{minted}{julia}
 objective(var"p_ocp##266",
   ((1 * var"dt##268" * (0.5 *
   var"u##277"[1, var"j##299"]^2))/2
@@ -523,10 +518,9 @@ Overall, the synergy between Julia GPU tools, SIMD structure in direct optimal c
 \subsection{Descriptions of the control problems used for the benchmark}
 \label{sa1}
 The complete code to reproduce the runs of Section~\ref{s6} can be retrieved at the following address:
-\href{https://anonymous.4open.science/r/OC-GPU/}{\texttt{https://anonymous.4open.science/r/OC-GPU/}}
+\href{https://anonymous.4open.science/r/OC-GPU/}{\texttt{anonymous.4open.science/r/OC-GPU}}
 
-{\small
-\begin{minted}{julia}
+{\footnotesize \begin{minted}{julia}
 # Goddard problem
 
 r0 = 1.0     
@@ -565,8 +559,7 @@ end
 \end{minted}
 }
 
-{\small
-\begin{minted}{julia}
+{\footnotesize \begin{minted}{julia}
 # Quadrotor problem
 
 T = 1
@@ -620,13 +613,16 @@ end
 }
 
 \subsection{GPU detailed configurations and results} \label{sa2}
-All runs performed with \texttt{OptimalControl.jl v1.1.1},
-\texttt{MadNLPMumps.jl v0.5.1} and
-\texttt{MadNLPGPU.jl v0.7.7}.\\
+All runs performed with
+\begin{itemize}
+  \item \texttt{OptimalControl.jl v1.1.1},
+  \item \texttt{MadNLPMumps.jl v0.5.1},
+  \item \texttt{MadNLPGPU.jl v0.7.7}.
+\end{itemize}
 
 \noindent \textbf{Configuration for the A100 runs}
 
-{\small \begin{verbatim}
+{\footnotesize \begin{verbatim}
 julia> CUDA.versioninfo()
 CUDA runtime 12.9, artifact installation
 CUDA driver 12.9
@@ -657,7 +653,7 @@ Toolchain:
 
 \noindent \textbf{Configuration for the H100 runs}
 
-{\small \begin{verbatim}
+{\footnotesize \begin{verbatim}
 julia> CUDA.versioninfo()
 CUDA toolchain: 
 - runtime 12.9, artifact installation
@@ -692,7 +688,7 @@ Preferences:
 \end{verbatim}}
 
 % Table 1: Goddard (A100)
-\begin{table}[htbp]
+\begin{table}[h!tbp]
 \centering
 \caption{Goddard problem, A100 run}
 \begin{tabular}{@{}rrr@{}}
@@ -717,7 +713,7 @@ Grid size ($N$) & CPU time (s) & GPU time (s) \\
 \end{table}
 
 % Table 2: Quadrotor (A100)
-\begin{table}[htbp]
+\begin{table}[h!tbp]
 \centering
 \caption{Quadrotor problem, A100 run}
 \begin{tabular}{@{}rrr@{}}
@@ -742,7 +738,7 @@ Grid size ($N$) & CPU time (s) & GPU time (s) \\
 \end{table}
 
 % Table 3: Goddard (H100)
-\begin{table}[htbp]
+\begin{table}[h!tbp]
 \centering
 \caption{Goddard problem, H100 run}
 \begin{tabular}{@{}rrr@{}}
@@ -769,7 +765,7 @@ Grid size ($N$) & CPU time (s) & GPU time (s) \\
 \end{table}
 
 % Table 4: Quadrotor (H100)
-\begin{table}[htbp]
+\begin{table}[h!tbp]
 \centering
 \caption{Quadrotor problem, H100 run}
 \begin{tabular}{@{}rrr@{}}
